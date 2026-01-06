@@ -10,19 +10,20 @@
 (setq-default gc-cons-threshold most-positive-fixnum
 	      gc-cons-percentage 1.0)
 
-
-(startup-redirect-eln-cache
- (convert-standard-filename
-  (expand-file-name  "var/eln-cache/" user-emacs-directory)))
-
 ;; --- Frame / windows layout & behavior --------------------------------------
 (setq default-frame-alist
-      '((height . 48)
-        (width  . 80)
+      '((height . 60)
+        (width  . 100)
         (alpha-background . 90)
         (left-fringe . 0)
         (right-fringe . 0)
-        (internal-border-width . 24))
+        (internal-border-width . 24)
+        (inhibit-double-buffering . nil))
+      frame-title-format '(:eval (concat
+	                          (if (and buffer-file-name (buffer-modified-p)) "•")
+	                          (buffer-name)
+	                          (if buffer-file-name
+		                      (concat " (" (directory-file-name (abbreviate-file-name default-directory)) ")")) " - Emacs"))
       bottom-divider-width nil
       right-divider-width nil
       window-divider-default-bottom-width 1
@@ -44,7 +45,6 @@
 
 (tool-bar-mode -1)
 (menu-bar-mode -1)
-(scroll-bar-mode -1)
 (scroll-bar-mode -1)
 (horizontal-scroll-bar-mode -1)
 
@@ -82,6 +82,10 @@
 ;; (setq-default header-line-format '("GC: " (:eval (number-to-string gcs-done)) " - " (:eval (number-to-string gc-elapsed)) "s"))
 
 (setq-default package-enable-at-startup nil)
+
+(startup-redirect-eln-cache
+ (convert-standard-filename
+  (expand-file-name  "var/eln-cache/" user-emacs-directory)))
 
 (setq byte-compile-warnings t
       byte-compile-verbose t)

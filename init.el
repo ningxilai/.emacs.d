@@ -54,137 +54,136 @@
 
     )
 
+;; -setup - aka elpaca-setup
 
-  ;; -setup - aka elpaca-setup
-
-  (defmacro elpaca-setup (order &rest body)
-    "Execute BODY in `setup' declaration after ORDER is finished.
+(defmacro elpaca-setup (order &rest body)
+  "Execute BODY in `setup' declaration after ORDER is finished.
 If the :disabled keyword is present in body, the package is completely ignored.
 This happens regardless of the value associated with :disabled.
 The expansion is a string indicating the package has been disabled."
-    (declare (indent 1))
-    (if (memq :disabled body)
-	(format "%S :disabled by elpaca-setup" order)
-      (let ((o order))
-	(when-let* ((ensure (cl-position :ensure body)))
-	  (setq o (if (null (nth (1+ ensure) body)) nil order)
-		body (append (cl-subseq body 0 ensure)
-			     (cl-subseq body (+ ensure 2)))))
-	`(elpaca ,o (setup
-			,(if-let* (((memq (car-safe order) '(quote \`)))
-				   (feature (flatten-tree order)))
-			     (cadr feature)
-			   (elpaca--first order))
-		      ,@body)))))
+  (declare (indent 1))
+  (if (memq :disabled body)
+      (format "%S :disabled by elpaca-setup" order)
+    (let ((o order))
+      (when-let* ((ensure (cl-position :ensure body)))
+	(setq o (if (null (nth (1+ ensure) body)) nil order)
+	      body (append (cl-subseq body 0 ensure)
+			   (cl-subseq body (+ ensure 2)))))
+      `(elpaca ,o (setup
+		      ,(if-let* (((memq (car-safe order) '(quote \`)))
+				 (feature (flatten-tree order)))
+			   (cadr feature)
+			 (elpaca--first order))
+		    ,@body)))))
 
-  (elpaca setup (require 'setup))
+(elpaca setup (require 'setup))
 
-  (elpaca-wait)
+(elpaca-wait)
 
-  (defun setup-wrap-to-install-package (body _name)
-    "Wrap BODY in an `elpaca' block if necessary.
+(defun setup-wrap-to-install-package (body _name)
+  "Wrap BODY in an `elpaca' block if necessary.
 The body is wrapped in an `elpaca' block if `setup-attributes'
 contains an alist with the key `elpaca'."
-    (if (assq 'elpaca setup-attributes)
-	`(elpaca ,(cdr (assq 'elpaca setup-attributes)) ,@(macroexp-unprogn body))
-      body))
-  ;; Add the wrapper function
-  (add-to-list 'setup-modifier-list #'setup-wrap-to-install-package)
+  (if (assq 'elpaca setup-attributes)
+      `(elpaca ,(cdr (assq 'elpaca setup-attributes)) ,@(macroexp-unprogn body))
+    body))
+;; Add the wrapper function
+(add-to-list 'setup-modifier-list #'setup-wrap-to-install-package)
 
-  (setup-define :elpaca
-    (lambda (order &rest recipe)
-      (push (cond
-	     ((eq order t) `(elpaca . ,(setup-get 'feature)))
-	     ((eq order nil) '(elpaca . nil))
-	     (`(elpaca . (,order ,@recipe))))
-	    setup-attributes)
-      ;; If the macro wouldn't return nil, it would try to insert the result of
-      ;; `push' which is the new value of the modified list. As this value usually
-      ;; cannot be evaluated, it is better to return nil which the byte compiler
-      ;; would optimize away anyway.
-      nil)
-    :documentation "Install ORDER with `elpaca'.
+(setup-define :elpaca
+  (lambda (order &rest recipe)
+    (push (cond
+	   ((eq order t) `(elpaca . ,(setup-get 'feature)))
+	   ((eq order nil) '(elpaca . nil))
+	   (`(elpaca . (,order ,@recipe))))
+	  setup-attributes)
+    ;; If the macro wouldn't return nil, it would try to insert the result of
+    ;; `push' which is the new value of the modified list. As this value usually
+    ;; cannot be evaluated, it is better to return nil which the byte compiler
+    ;; would optimize away anyway.
+    nil)
+  :documentation "Install ORDER with `elpaca'.
 The ORDER can be used to deduce the feature context."
-    :shorthand #'cadr)
+  :shorthand #'cadr)
 
-  (setup-define :silence
-    (lambda (&rest body)
-      `(cl-letf (((symbol-function 'message) #'format))
-	 ,(macroexp-progn body)))
-    :documentation "Evaluate BODY but keep the echo era clean."
-    :debug '(setup))
+(setup-define :silence
+  (lambda (&rest body)
+    `(cl-letf (((symbol-function 'message) #'format))
+       ,(macroexp-progn body)))
+  :documentation "Evaluate BODY but keep the echo era clean."
+  :debug '(setup))
 
-  (setup-define :custom
-    (setup-make-setter
-     (lambda (name)
-       `(funcall (or (get ',name 'custom-get)
-		     #'symbol-value)
-		 ',name))
-     (lambda (name val)
-       `(progn
-	  (custom-load-symbol ',name)
-	  (funcall (or (get ',name 'custom-set) #'set-default)
-		   ',name ,val))))
+(setup-define :custom
+  (setup-make-setter
+   (lambda (name)
+     `(funcall (or (get ',name 'custom-get)
+		   #'symbol-value)
+	       ',name))
+   (lambda (name val)
+     `(progn
+	(custom-load-symbol ',name)
+	(funcall (or (get ',name 'custom-set) #'set-default)
+		 ',name ,val))))
 
-    :documentation "Like default `:option', but set variables after the feature is loaded."
-    :debug '(sexp form)
-    :repeatable t
-    :after-loaded t)
+  :documentation "Like default `:option', but set variables after the feature is loaded."
+  :debug '(sexp form)
+  :repeatable t
+  :after-loaded t)
 
-  (setup-define :after
-    (lambda (feature &rest body)
-      `(:with-feature ,feature
-	 (:when-loaded ,@body)))
-    :documentation "Eval BODY after FEATURE."
-    :indent 1)
+(setup-define :after
+  (lambda (feature &rest body)
+    `(:with-feature ,feature
+       (:when-loaded ,@body)))
+  :documentation "Eval BODY after FEATURE."
+  :indent 1)
 
-  (setup-define :delay
-    (lambda (time &rest body)
-      `(run-with-idle-timer ,time nil
-			    (lambda () ,@body)))
-    :documentation "Delay loading BODY until a certain amount of idle time has passed."
-    :indent 1)
+(setup-define :delay
+  (lambda (time &rest body)
+    `(run-with-idle-timer ,time nil
+			  (lambda () ,@body)))
+  :documentation "Delay loading BODY until a certain amount of idle time has passed."
+  :indent 1)
 
-  ;;  src: https://emacs.nasy.moe/#Setup-EL
-  (setup-define :autoload
-    (lambda (func)
-      (let ((fn (if (memq (car-safe func) '(quote function))
-		    (cadr func)
-		  func)))
-	`(unless (fboundp (quote ,fn))
-	   (autoload (function ,fn) ,(symbol-name (setup-get 'feature)) nil t))))
-    :documentation "Autoload COMMAND if not already bound."
-    :repeatable t
-    :signature '(FUNC ...))
+;;  src: https://emacs.nasy.moe/#Setup-EL
+(setup-define :autoload
+  (lambda (func)
+    (let ((fn (if (memq (car-safe func) '(quote function))
+		  (cadr func)
+		func)))
+      `(unless (fboundp (quote ,fn))
+	 (autoload (function ,fn) ,(symbol-name (setup-get 'feature)) nil t))))
+  :documentation "Autoload COMMAND if not already bound."
+  :repeatable t
+  :signature '(FUNC ...))
 
-  (setup-define :hooks
-    (lambda (hook func)
-      `(add-hook ',hook #',func))
-    :documentation "Add pairs of hooks."
-    :repeatable t)
+(setup-define :hooks
+  (lambda (hook func)
+    `(add-hook ',hook #',func))
+  :documentation "Add pairs of hooks."
+  :repeatable t)
 
-  (setup-define :init
-    (lambda (&rest body) (macroexp-progn body))
-    :documentation "Init keywords like use-package and leaf.")
+(setup-define :init
+  (lambda (&rest body) (macroexp-progn body))
+  :documentation "Init keywords like use-package and leaf.")
 
-  (setup-define :advice
-    (lambda (symbol where function)
-      `(advice-add ',symbol ,where ,function))
-    :documentation "Add a piece of advice on a function.
+(setup-define :advice
+  (lambda (symbol where function)
+    `(advice-add ',symbol ,where ,function))
+  :documentation "Add a piece of advice on a function.
  See `advice-add' for more details."
-    :after-loaded t
-    :debug '(sexp sexp function-form)
-    :ensure '(nil nil func)
-    :repeatable t)
+  :after-loaded t
+  :debug '(sexp sexp function-form)
+  :ensure '(nil nil func)
+  :repeatable t)
 
 ;;; warning
 
-  (dolist (dir '("lisp" "site-lisp"))
-    (push (expand-file-name dir user-emacs-directory) load-path))
+(dolist (dir '("lisp" "site-lisp"))
+  (push (expand-file-name dir user-emacs-directory) load-path))
 
-  (require 'setup-load)
+(require 'setup-load)
 
-  )
+)
 
 (setup (:elpaca gcmh)
   (add-hook 'on-first-buffer-hook #'gcmh-mode)
@@ -359,6 +358,7 @@ The ORDER can be used to deduce the feature context."
   (add-hook 'dirvish-directory-view-mode-hook #'diredfl-mode))
 
 (setup (:elpaca doom-themes)
+
   (defun +nanolize (&rest args)
     (interactive)
     (let* ((background
@@ -596,8 +596,7 @@ The ORDER can be used to deduce the feature context."
 	   uniquify-separator "/"))
 
 (setup linum
-  (dolist (mode '(ibuffer-mode-hook
-		  bookmark-bmenu-mode-hook))
+  (dolist (mode '(bookmark-bmenu-mode-hook))
     (add-hook mode (lambda () (progn (display-line-numbers-mode 1)))))
   (setopt display-line-numbers-type 'visual)
   (:option display-line-numbers-width 3
@@ -613,14 +612,6 @@ The ORDER can be used to deduce the feature context."
            auto-revert-remote-files nil)
   (:init (setopt global-auto-revert-non-file-buffers t
 		 global-auto-revert-ignore-modes '(Buffer-menu-mode))))
-
-(setup ibuffer
-  (add-hook 'ibuffer-mode-hook #'hl-line-mode)
-  (:option ibuffer-default-sorting-mode 'recency  ;; can use alphabetic)
-           ibuffer-use-other-window t                ;; ibuffer in other windows
-           ibuffer-jump-offer-only-visible-buffers t
-           ibuffer-human-readable-size t)
-  (:bind "C-x C-b" ibuffer))
 
 (setup (:elpaca elisp-autofmt)
   (add-hook 'emacs-lisp-mode-hook #'elisp-autofmt-mode))
@@ -699,19 +690,6 @@ The ORDER can be used to deduce the feature context."
                     (face-attribute 'default :family)))
 
 (setup ui
-  (setq-default frame-title-format
-		'(:eval (concat
-			 (if (and buffer-file-name (buffer-modified-p)) "•")
-			 (buffer-name)
-			 (if buffer-file-name
-			     (concat " (" (directory-file-name (abbreviate-file-name default-directory)) ")")) " - Emacs")))
-
-  (setq-default ibuffer-formats
-		'((mark modified read-only locked
-			" " (name 55 55 :left :elide)
-			" " (size 8 -1 :right)
-			" " (mode 18 18 :left :elide) " " filename-and-process)
-		  (mark " " (name 16 -1) " " filename)))
 
   (set-display-table-slot standard-display-table 'truncation (make-glyph-code ?…))
   (set-display-table-slot standard-display-table 'wrap (make-glyph-code ?–))
@@ -723,22 +701,77 @@ The ORDER can be used to deduce the feature context."
                      split-width-threshold 120
                      pop-up-windows nil))))
 
-  (setq minibuffer-prompt-properties
-        '(read-only t intangible t cursor-intangible t face minibuffer-prompt))
+  (setopt minibuffer-prompt-properties
+          '(read-only t intangible t cursor-intangible t face minibuffer-prompt))
   (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
-  (setq enable-recursive-minibuffers t)
+  (setopt enable-recursive-minibuffers t)
 
   (setopt window-resize-pixelwise t)
 
   )
 
 (setup feature
-  (:option
-   delete-selection-mode t
-   global-so-long-mode t
-   global-subword-mode t
-   global-prettify-symbols-mode t)
+  (:option delete-selection-mode t
+           global-so-long-mode t
+           global-subword-mode t
+           global-prettify-symbols-mode t)
+
+  (:custom global-text-scale-adjust-resizes-frames nil ;; face-remap
+           custom-buffer-done-kill t ;; cus-edit
+           tramp-backup-directory-alist backup-directory-alist ;; Tramp
+           )
+
+  (:hooks on-init-ui-hook (lambda () (setopt kill-buffer-delete-auto-save-files t
+					word-wrap t
+					truncate-lines nil
+					interprogram-cut-function #'gui-select-text
+					word-wrap-by-category t
+					truncate-partial-width-windows nil
+					ring-bell-function nil
+					indicate-buffer-boundaries nil
+					indicate-empty-lines nil
+					history-length 1000
+					create-lockfiles nil
+					delete-auto-save-files t
+					auto-save-no-message t
+					auto-save-include-big-deletions t
+					use-short-answers t
+					read-buffer-completion-ignore-case t
+					;; C Source
+					save-interprogram-paste-before-kill t
+					kill-ring-max 200
+					kill-do-not-save-duplicates t
+					indent-tabs-mode nil
+					eval-expression-print-length nil
+					eval-expression-print-level nil
+					read-extended-command-predicate #'command-completion-default-include-p
+					blink-matching-paren t
+					blink-matching-paren-on-screen t
+					;; simple
+					select-enable-clipboard t
+					select-enable-primary nil
+					;; select
+					comment-multi-line t
+					comment-empty-lines t
+					;; newcomment
+					read-answer-short t
+					;; map-ynp
+					sentence-end-double-space nil
+					;; paragraph
+					elisp-fontify-semantically t
+					;; elisp-mode
+					ad-redefinition-action 'accept
+					;; advice
+					delete-pair-blink-delay 0.03
+					;; lisp
+					lazy-highlight-initial-delay 0
+					;; isearch
+					read-file-name-completion-ignore-case t
+					;; minibuffer
+					auto-save-list-file-prefix (file-name-concat user-emacs-directory "var/auto-save-list/.saves-")
+					;; startup
+					)))
 
   (setq-default custom-file (expand-file-name "custom.el" user-emacs-directory))
   (load custom-file :no-error-if-file-is-missing)
@@ -747,53 +780,6 @@ The ORDER can be used to deduce the feature context."
 					   (visual-line-mode)
 					   (setq-local auto-composition-mode nil
                                                        text-mode-ispell-word-completion nil))))
-
-  (add-hook 'emacs-startup-hook #'(lambda () (setopt kill-buffer-delete-auto-save-files t
-                                                word-wrap t
-                                                truncate-lines nil
-                                                interprogram-cut-function #'gui-select-text
-                                                word-wrap-by-category t
-                                                truncate-partial-width-windows nil
-                                                ring-bell-function nil
-                                                indicate-buffer-boundaries nil
-                                                indicate-empty-lines nil
-                                                history-length 1000
-                                                create-lockfiles nil
-                                                delete-auto-save-files t
-                                                auto-save-no-message t
-                                                auto-save-include-big-deletions t
-                                                use-short-answers t
-                                                read-buffer-completion-ignore-case t
-                                                ;; C Source
-                                                select-enable-clipboard t
-                                                select-enable-primary nil
-                                                ;; select
-                                                comment-multi-line t
-                                                comment-empty-lines t
-                                                ;; newcomment
-                                                read-answer-short t
-                                                ;; map-ynp
-                                                sentence-end-double-space nil
-                                                ;; paragraph
-                                                elisp-fontify-semantically t
-                                                ;; elisp-mode
-                                                ad-redefinition-action 'accept
-                                                ;; advice
-                                                global-text-scale-adjust-resizes-frames nil
-                                                ;; face-remap
-                                                delete-pair-blink-delay 0.03
-                                                ;; lisp
-                                                lazy-highlight-initial-delay 0
-                                                ;; isearch
-                                                read-file-name-completion-ignore-case t
-                                                ;; minibuffer
-                                                custom-buffer-done-kill t
-                                                ;; cus-edit
-                                                tramp-backup-directory-alist backup-directory-alist
-                                                ;; Tramp
-                                                auto-save-list-file-prefix (file-name-concat user-emacs-directory "var/auto-save-list/.saves-")
-                                                ;; startup
-                                                )))
 
   (defun logging-disabled-command (&optional cmd keys)
     (unless cmd (setq cmd this-command))
@@ -910,17 +896,6 @@ The ORDER can be used to deduce the feature context."
 
            save-abbrevs 'silently
            require-final-newline t))
-
-(setup simple
-  (:option save-interprogram-paste-before-kill t
-           kill-ring-max 200
-           kill-do-not-save-duplicates t
-           indent-tabs-mode nil
-           eval-expression-print-length nil
-           eval-expression-print-level nil
-           read-extended-command-predicate #'command-completion-default-include-p
-           blink-matching-paren t
-           blink-matching-paren-on-screen t))
 
 (setup fontset
   (:init
@@ -1141,7 +1116,7 @@ The ORDER can be used to deduce the feature context."
   (:option dabbrev-upcase-means-case-search t
            dabbrev-check-all-buffers nil
            dabbrev-ignored-buffer-modes
-           '(archive-mode image-mode docview-mode tags-table-mode
+           '(archive-mode authinfo-mode image-mode doc-view-mode
                           pdf-view-mode tags-table-mode)
            dabbrev-ignored-buffer-regexps
            ;; '("\\`[ *]")
@@ -1224,6 +1199,63 @@ The ORDER can be used to deduce the feature context."
 (setup (:elpaca rg)
   (rg-enable-default-bindings))
 
+(setup (:elpaca cape)
+
+  (add-to-list 'completion-at-point-functions #'cape-file)
+  (add-to-list 'completion-at-point-functions #'cape-elisp-block)
+  (add-to-list 'completion-at-point-functions #'cape-keyword)
+  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+
+  (setq completion-at-point-functions (list (cape-capf-debug #'cape-dict)))
+
+  (:advice lsp-completion-at-point :around cape-wrap-noninterruptible
+           lsp-completion-at-point :around cape-wrap-nonexclusive
+           comint-completion-at-point :around cape-wrap-nonexclusive
+           pcomplete-completions-at-point :around cape-wrap-nonexclusive)
+
+  (:hooks emacs-lisp-mode (lambda ()
+                            (setopt completion-at-point-functions
+                                    (list (cape-capf-super
+                                           #'cape-dabbrev
+                                           #'cape-file
+                                           #'elisp-completion-at-point
+                                           ))
+                                    cape-dabbrev-min-length 2
+                                    cape-dabbrev-check-other-buffers t))))
+
+(setup (:elpaca corfu)
+  (global-corfu-mode)
+
+  (defun corfu-move-to-minibuffer ()
+    (interactive)
+    (pcase completion-in-region--data
+      (`(,beg ,end ,table ,pred ,extras)
+       (let ((completion-extra-properties extras)
+             completion-cycle-threshold completion-cycling)
+         (consult-completion-in-region beg end table pred)))))
+
+  (add-to-list 'corfu-continue-commands #'corfu-move-to-minibuffer)
+
+  (:option corfu-auto t
+           corfu-auto-delay 0.3
+           corfu-auto-prefix 3
+           corfu-quit-no-match 'separator)
+  (:custom corfu-preview-current t
+           corfu-popupinfo-delay '(0.4 . 0.2)
+           global-corfu-minibuffer (lambda ()
+                                     (not (or (bound-and-true-p mct--active)
+                                              (bound-and-true-p vertico--input)
+                                              (eq (current-local-map) read-passwd-map))))
+           read-extended-command-predicate #'command-completion-default-include-p)
+  (:bind "M-SPC" corfu-quick-complete
+         "M-m" corfu-move-to-minibuffer)
+  (:hooks prog-mode-hook corfu-mode
+          corfu-mode-hook corfu-popupinfo-mode
+          eshell-mode-hook (lambda ()  (setq-local corfu-auto nil) (corfu-mode))))
+
+(setup (:elpaca nerd-icons-corfu)
+  (:init (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)))
+
 (setup (:elpaca consult)
   (:option consult-narrow-key "<"
            consult-line-numbers-widen t
@@ -1257,9 +1289,8 @@ The ORDER can be used to deduce the feature context."
    consult--source-project-recent-file
    consult--source-bookmark :preview-key "C-SPC"))
 
-(setup (:elpaca vertico)
-  (vertico-mode)
-  (:custom tab-always-indent 'complete
+(setup icomplete-mode
+  (:option tab-always-indent 'complete
            icomplete-delay-completions-threshold 0
            icomplete-compute-delay 0
            icomplete-show-matches-on-no-input t
@@ -1272,10 +1303,19 @@ The ORDER can be used to deduce the feature context."
            icomplete-scroll t
            resize-mini-windows 'grow-only
            icomplete-matches-format nil)
-  (:option vertico-cycle t))
+  (:bind "M-/" completion-at-point)
+  (icomplete-vertical-mode -1))
+
+(setup (:elpaca vertico)
+  (vertico-mode)
+  (:option vertico-cycle t)
+  (:hooks vertico-mode-hook nerd-icons-completion-mode))
 
 (setup (:elpaca orderless)
-  (setopt completion-styles '(orderless basic))
+  (:custom completion-styles '(orderless basic)
+           completion-category-overrides '((file (styles partial-completion)))
+           completion-category-defaults nil
+           completion-pcm-leading-wildcard t)
 
   (defun flex-if-twiddle (pattern _index _total)
     (when (string-suffix-p "~" pattern)
@@ -1296,65 +1336,34 @@ The ORDER can be used to deduce the feature context."
                                          first-initialism
                                          flex-if-twiddle
                                          not-if-bang)
-           completion-category-defaults nil
-           completion-category-overrides '((file (styles basic partial-completion)))
            orderless-component-separator #'orderless-escapable-split-on-space))
+
+(setup (:elpaca nerd-icons-completion)
+  (nerd-icons-completion-mode))
 
 (setup (:elpaca marginalia)
   (marginalia-mode)
   (:option marginalia-max-relative-age 0
-           marginalia-align 'right))
+           marginalia-align 'right)
+  (:hooks marginalia-mode-hook nerd-icons-completion-marginalia-setup))
 
-(setup (:elpaca cape)
+(setup ibuffer
+  (add-hook 'ibuffer-mode-hook #'hl-line-mode)
+  (:custom ibuffer-default-sorting-mode 'recency  ;; can use alphabetic)
+           ibuffer-use-other-window t                ;; ibuffer in other windows
+           ibuffer-jump-offer-only-visible-buffers t
+           ibuffer-human-readable-size t)
+  (:option ibuffer-formats
+         '((mark modified read-only locked
+	         " " (name 55 55 :left :elide)
+	         " " (size 8 -1 :right)
+	         " " (mode 18 18 :left :elide) " " filename-and-process)
+           (mark " " (name 16 -1) " " filename)))
+  (:bind "C-x C-b" ibuffer))
 
-  (add-to-list 'completion-at-point-functions #'cape-file)
-  (add-to-list 'completion-at-point-functions #'cape-elisp-block)
-  (add-to-list 'completion-at-point-functions #'cape-keyword)
-  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-
-  (advice-add 'lsp-completion-at-point :around #'cape-wrap-noninterruptible)
-  (advice-add 'lsp-completion-at-point :around #'cape-wrap-nonexclusive)
-  (advice-add 'comint-completion-at-point :around #'cape-wrap-nonexclusive)
-  (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-nonexclusive)
-
-  (add-hook 'emacs-lisp-mode #'(lambda ()
-                                 (setopt completion-at-point-functions
-                                         (list (cape-capf-super
-                                                #'cape-dabbrev
-                                                #'cape-file
-                                                #'elisp-completion-at-point
-                                                ))
-                                         cape-dabbrev-min-length 2
-                                         cape-dabbrev-check-other-buffers t))))
-
-(setup (:elpaca corfu)
-  (global-corfu-mode)
-  (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)
-  (:option corfu-auto t
-           corfu-quit-no-match 'separator
-           corfu-auto-delay 0.3
-           corfu-popupinfo-delay '(0.4 . 0.2)
-           corfu-auto-prefix 3
-           corfu-preview-current t)
-  (:bind "M-/" completion-at-point
-         "M-SPC" corfu-quick-complete)
-  (add-hook 'prog-mode-hook #'corfu-mode)
-  (add-hook 'corfu-mode-hook #'corfu-popupinfo-mode))
-
-(setup (:elpaca nerd-icons-completion)
-  (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup)
-  (add-hook 'vertico-mode-hook #'nerd-icons-completion-mode))
-
-(setup (:elpaca nerd-icons-corfu)
-  (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)
-  (setopt nerd-icons-corfu-mapping
-          '((array :style "cod" :icon "symbol_array" :face font-lock-type-face)
-            (boolean :style "cod" :icon "symbol_boolean" :face font-lock-builtin-face)
-            ;; You can alternatively specify a function to perform the mapping,
-            ;; use this when knowing the exact completion candidate is important.
-            (file :fn nerd-icons-icon-for-file :face font-lock-string-face)
-            ;; ...
-            (t :style "cod" :icon "code" :face font-lock-warning-face))))
+(setup (:elpaca nerd-icons-ibuffer)
+  (nerd-icons-ibuffer-mode)
+  (:hooks ibuffer-mode-hook nerd-icons-ibuffer-mode))
 
 (setup eshell
 
@@ -1379,7 +1388,8 @@ The ORDER can be used to deduce the feature context."
           (other-window 1)
           (eshell))
       (switch-to-buffer-other-window "*eshell*")))
-  (add-hook 'eshell-mode #'completion-preview-mode)
+
+  (add-hook 'eshell-mode-hook #'completion-preview-mode)
 
   (:option eshell-highlight-prompt nil
            eshell-prompt-regexp "^[^αλ\n]*[αλ] "
@@ -1485,7 +1495,7 @@ The ORDER can be used to deduce the feature context."
   (add-hook 'on-first-input-hook #'lsp-ui-set-doc-border))
 
 (setup module
-  (:load lang-org lang-apl)
+  (:load lang-apl)
   (:load-incremental lang-org))
 
 (setup (:elpaca markdown-mode)
