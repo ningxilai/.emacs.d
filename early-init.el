@@ -51,6 +51,9 @@
 (setq horizontal-scroll-bars nil
       vertical-scroll-bars nil)
 
+(setq make-cursor-line-fully-visible nil
+      track-eol t
+      kill-whole-line t)
 
 ;; --- Sane settings ------ CJK && UTF-8 ---------------------------------------
 (set-language-environment "utf-8")
@@ -96,7 +99,10 @@
 (setq-default bidi-display-reordering 'left-to-right
               bidi-paragraph-direction 'left-to-right)
 
-(setq bidi-inhibit-bpa t)
+(setq bidi-inhibit-bpa t
+      long-line-threshold 1000
+      large-hscroll-threshold 1000
+      syntax-wholeline-max 1000)
 
 (setq-default cursor-in-non-selected-windows nil)
 
