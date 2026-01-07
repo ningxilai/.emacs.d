@@ -186,7 +186,7 @@ The ORDER can be used to deduce the feature context."
 )
 
 (setup (:elpaca gcmh)
-  (add-hook 'on-first-buffer-hook #'gcmh-mode)
+  (:hooks elpaca-after-init-hook gcmh-mode)
   (:option gcmh-idle-delay 'auto
 	   gcmh-auto-idle-delay-factor 10
 	   gcmh-high-cons-threshold (* 16 1024 1024)))
@@ -204,128 +204,129 @@ The ORDER can be used to deduce the feature context."
 (setup (:elpaca no-littering)
   (:init (let ((dir (no-littering-expand-var-file-name "lock-files/")))
            (make-directory dir t)
-           (setq lock-file-name-transforms `((".*" ,dir t)))))
+           (setq lock-file-name-transforms `((".*" ,dir t))))
 
-  (setup dired
-    (add-hook 'dired-mode-hook #'dired-omit-mode)
-    (add-hook 'dired-mode-hook #'auto-revert-mode)
-    (add-hook 'dired-mode-hook #'dired-hide-details-mode)
-    (add-hook 'dired-mode-hook #'nerd-icons-dired-mode)
-    (define-key dired-mode-map (kbd "C-c C-r") #'dirvish-rsync)
-    (:init
-     (put 'dired-find-alternate-file 'disabled nil)
-     (setq dired-dwim-target t  ; suggest a target for moving/copying intelligently
-           ;; don't prompt to revert, just do it
-           dired-auto-revert-buffer (lambda (dirname)
-                                      (and (not (file-remote-p dirname))
-                                           (dired-directory-changed-p dirname)))
-           ;; Always copy/delete recursively
-           dired-recursive-copies  'always
-           dired-recursive-deletes 'top
-           ;; Where to store image caches
-           image-dired-dir (file-name-concat no-littering-var-directory "image-dired/")
-           image-dired-db-file (concat image-dired-dir "db.el")
-           image-dired-gallery-dir (concat image-dired-dir "gallery/")
-           image-dired-temp-image-file (concat image-dired-dir "temp-image")
-           image-dired-temp-rotate-image-file (concat image-dired-dir "temp-rotate-image")
-           ;; Screens are larger nowadays, we can afford slightly larger thumbnails
-           image-dired-thumb-size 150
-           image-dired-external-viewer "gimp"))
-    (:option dired-listing-switches "--color=auto --sort=Name --classify --group-directories-first --time-style=long-iso --group --all --header --long"
-             dired-at-point-require-prefix t
-             dired-movement-style 'cycle
-             delete-by-moving-to-trash t
-             dired-async-mode t
-             dired-isearch-filenames 'dwim
-             dired-maybe-use-globstar t
-             dired-mouse-drag-files t
-             dired-kill-when-opening-new-dired-buffer t
-             dired-filter-verbose nil
-             dired-hide-details-hide-symlink-targets nil
-             dired-free-space nil)
-    )
+	 (dolist (list '(no-littering-etc-directory no-littering-var-directory))
+	   (add-to-list 'recentf-exclude list))))
 
-  (setup dired-x
-    (add-hook 'dired-mode-hook #'dirvish)
-    (add-hook 'dired-mode-hook #'dired-omit-mode)
-    (add-hook 'dired-mode-hook #'centaur-tabs-local-mode)
-    (when-let (cmd (cond ((featurep :system 'macos) "open")
-                         ((featurep :system 'linux) "xdg-open")
-                         ((featurep :system 'windows) "start")))
-      (setq dired-guess-shell-alist-user
-            `(("\\.\\(?:docx\\|pdf\\|djvu\\|eps\\)\\'" ,cmd)
-              ("\\.\\(?:jpe?g\\|png\\|gif\\|xpm\\)\\'" ,cmd)
-              ("\\.\\(?:xcf\\)\\'" ,cmd)
-              ("\\.csv\\'" ,cmd)
-              ("\\.tex\\'" ,cmd)
-              ("\\.\\(?:mp4\\|mkv\\|avi\\|flv\\|rm\\|rmvb\\|ogv\\)\\(?:\\.part\\)?\\'" ,cmd)
-              ("\\.\\(?:mp3\\|flac\\)\\'" ,cmd)
-              ("\\.html?\\'" ,cmd)
-              ("\\.md\\'" ,cmd))))
-    (:option dired-omit-verbose nil
-             dired-omit-files
-             (concat dired-omit-files
-                     "\\|^\\.DS_Store\\'"
-                     "\\|^flycheck_.*"
-                     "\\|^\\.project\\(?:ile\\)?\\'"
-                     "\\|^\\.\\(?:svn\\|git\\)\\'"
-                     "\\|^\\.ccls-cache\\'"
-                     "\\|\\(?:\\.js\\)?\\.meta\\'"
-                     "\\|\\.\\(?:elc\\|o\\|pyo\\|swp\\|class\\)\\'")
-             dired-clean-confirm-killing-deleted-buffers nil))
+(setup recentf
+  (:init (run-with-idle-timer 10 nil #'recentf-cleanup))
+  (:hooks elpaca-after-init-hook recentf-mode)
+  (:option recentf-max-saved-items 256
+           recentf-auto-cleanup 'mode
+           recentf-exclude nil))
 
-  (setup dired-aux
-    (:option dired-create-destination-dirs 'ask
-             dired-vc-rename-file t))
+(setup savehist
+  (:hooks elpaca-after-init-hook savehist-mode)
+  (:option
+   savehist-save-minibuffer-history t
+   savehist-additional-variables '(search-ring
+                                   regexp-search-ring
+                                   extended-command-history
+                                   kill-ring
+                                   mark-ring
+                                   global-mark-ring
+                                   kmacro-ring
+                                   log-edit-comment-ring
+                                   register-alist)
+   ;; We use an idle timer instead, as saving can cause
+   ;; noticable delays with large histories.
+   savehist-autosave-interval nil))
 
-  (setup recentf
-    (ffap-bindings)
-    (recentf-mode t)
-    (run-with-idle-timer 10 nil #'recentf-cleanup)
+(setup saveplace
+  (:hooks elpaca-after-init-hook save-place-mode
+          after-save-hook save-place-local-mode)
+  (:option save-place-limit 600)
+  (:custom save-place-ignore-files-regexp
+           (replace-regexp-in-string "\\\\)\\$" "\\|^/tmp/.+\\)$"
+                                     save-place-ignore-files-regexp t t)))
 
-    (add-to-list 'recentf-exclude
-                 (recentf-expand-file-name no-littering-var-directory))
-    (add-to-list 'recentf-exclude
-                 (recentf-expand-file-name no-littering-etc-directory))
-    (:option recentf-max-saved-items 256
-             recentf-auto-cleanup 'mode
-             recentf-exclude nil))
+(setup dired
+  (:init
+   (let ((args (list "-ahl" "-v" "--group-directories-first")))
+     (when (featurep :system 'bsd)
+       ;; Use GNU ls as `gls' from `coreutils' if available. Add `(setq
+       ;; dired-use-ls-dired nil)' to your config to suppress the Dired warning
+       ;; when not using GNU ls.
+       (if-let* ((gls (executable-find "gls")))
+           (setq insert-directory-program gls)
+         ;; BSD ls doesn't support -v or --group-directories-first
+         (setq args (list (car args)))))
+     (setq dired-listing-switches (string-join args " ")))
 
-  (setup savehist
-    (savehist-mode t)
+   (put 'dired-find-alternate-file 'disabled nil)
+   (setq dired-dwim-target t  ; suggest a target for moving/copying intelligently
+         ;; don't prompt to revert, just do it
+         dired-auto-revert-buffer (lambda (dirname)
+                                    (and (not (file-remote-p dirname))
+                                         (dired-directory-changed-p dirname)))
+         ;; Always copy/delete recursively
+         dired-recursive-copies  'always
+         dired-recursive-deletes 'top
+         ;; Where to store image caches
+         image-dired-dir (file-name-concat user-emacs-directory "var/image-dired/")
+         image-dired-db-file (concat image-dired-dir "db.el")
+         image-dired-gallery-dir (concat image-dired-dir "gallery/")
+         image-dired-temp-image-file (concat image-dired-dir "temp-image")
+         image-dired-temp-rotate-image-file (concat image-dired-dir "temp-rotate-image")
+         ;; Screens are larger nowadays, we can afford slightly larger thumbnails
+         image-dired-thumb-size 150
+         image-dired-external-viewer "gimp"))
+  (:option dired-at-point-require-prefix t
+           dired-movement-style 'cycle
+           delete-by-moving-to-trash t
+           dired-async-mode t
+           dired-isearch-filenames 'dwim
+           dired-maybe-use-globstar t
+           dired-mouse-drag-files t
+           dired-kill-when-opening-new-dired-buffer t
+           dired-filter-verbose nil
+           dired-hide-details-hide-symlink-targets nil
+           dired-free-space nil)
+  (:hooks dired-mode-hook dired-omit-mode
+          dired-mode-hook auto-revert-mode
+          dired-mode-hook dired-hide-details-mode
+          dired-mode-hook nerd-icons-dired-mode))
 
-    (:option
-     savehist-save-minibuffer-history t
-     savehist-additional-variables '(search-ring
-                                     regexp-search-ring
-                                     extended-command-history
-                                     kill-ring
-                                     mark-ring
-                                     global-mark-ring
-                                     kmacro-ring
-                                     log-edit-comment-ring
-                                     register-alist)
-     ;; We use an idle timer instead, as saving can cause
-     ;; noticable delays with large histories.
-     savehist-autosave-interval nil))
+(setup dired-x
+  (when-let (cmd (cond ((featurep :system 'macos) "open")
+                       ((featurep :system 'linux) "xdg-open")
+                       ((featurep :system 'windows) "start")))
+    (setq dired-guess-shell-alist-user
+          `(("\\.\\(?:docx\\|pdf\\|djvu\\|eps\\)\\'" ,cmd)
+            ("\\.\\(?:jpe?g\\|png\\|gif\\|xpm\\)\\'" ,cmd)
+            ("\\.\\(?:xcf\\)\\'" ,cmd)
+            ("\\.csv\\'" ,cmd)
+            ("\\.tex\\'" ,cmd)
+            ("\\.\\(?:mp4\\|mkv\\|avi\\|flv\\|rm\\|rmvb\\|ogv\\)\\(?:\\.part\\)?\\'" ,cmd)
+            ("\\.\\(?:mp3\\|flac\\)\\'" ,cmd)
+            ("\\.html?\\'" ,cmd)
+            ("\\.md\\'" ,cmd))))
+  (:option dired-omit-verbose nil
+           dired-clean-confirm-killing-deleted-buffers nil)
+  (:custom dired-omit-files
+           (concat dired-omit-files
+                   "\\|^\\.DS_Store\\'"
+                   "\\|^flycheck_.*"
+                   "\\|^\\.project\\(?:ile\\)?\\'"
+                   "\\|^\\.\\(?:svn\\|git\\)\\'"
+                   "\\|^\\.ccls-cache\\'"
+                   "\\|\\(?:\\.js\\)?\\.meta\\'"
+                   "\\|\\.\\(?:elc\\|o\\|pyo\\|swp\\|class\\)\\'")))
 
-  (setup saveplace
-    (save-place-mode +1)
-    (save-place-local-mode +1)
-    (auto-save-visited-mode +1)
-    (:option save-place-limit 600
-             save-place-ignore-files-regexp
-             (replace-regexp-in-string "\\\\)\\$" "\\|^/tmp/.+\\)$"
-                                       save-place-ignore-files-regexp t t))))
+(setup dired-aux
+  (:option dired-create-destination-dirs 'ask
+           dired-vc-rename-file t))
+
+(setup (:elpaca diredfl)
+  (:hooks dired-mode-hook diredfl-mode))
 
 (setup (:elpaca dirvish)
-  (add-hook 'on-first-buffer-hook
-            #'(lambda() (progn (dirvish-peek-mode)
-                          (dirvish-side-follow-mode))))
-  (add-hook 'dirvish-directory-view-mode-hook #'centaur-tabs-local-mode)
-  (:init (dirvish-override-dired-mode)
-         (advice-add #'dired--find-file :override #'dirvish--find-entry)
-         (advice-add #'dired-noselect :around #'dirvish-dired-noselect-a))
+  (:hooks elpaca-after-init-hook (lambda() (progn (dirvish-peek-mode)
+                                             (dirvish-side-follow-mode)
+                                             (dirvish-override-dired-mode))))
+  (:advice dired--find-file :override dirvish--find-entry
+           dired-noselect :around dirvish-dired-noselect-a)
   (:option dirvish-override-dired-mode t
            dirvish-reuse-session 'open
            dirvish-attributes nil
@@ -342,7 +343,11 @@ The ORDER can be used to deduce the feature context."
            dirvish-side-attributes
            '(vc-state nerd-icons collapse file-size)
            dirvish-attributes
-           '(vc-state file-size git-msg subtree-state collapse file-time)))
+           '(vc-state file-size git-msg subtree-state collapse file-time))
+  (:bind "C-c C-r" dirvish-rsync)
+  (:hooks dirvish-directory-view-mode-hook diredfl-mode
+          dirvish-directory-view-mode-hook centaur-tabs-local-mode)
+  )
 
 (setup (:elpaca nerd-icons-dired)
   (:init (defface nerd-icons-dired-dir-face
@@ -352,10 +357,6 @@ The ORDER can be used to deduce the feature context."
          (defun my-nerd-icons-icon-for-dir (dir)
            (nerd-icons-icon-for-dir dir :face 'nerd-icons-dired-dir-face))
          (setq nerd-icons-dired-dir-icon-function #'my-nerd-icons-icon-for-dir)))
-
-(setup (:elpaca diredfl)
-  (add-hook 'dired-mode-hook #'diredfl-mode)
-  (add-hook 'dirvish-directory-view-mode-hook #'diredfl-mode))
 
 (setup (:elpaca doom-themes)
 
@@ -677,7 +678,7 @@ The ORDER can be used to deduce the feature context."
 		vundo-compact-display t))
 
 (setup (:elpaca undohist)
-  (add-hook 'on-first-file-hook #'undohist-initialize))
+  (:hooks first-change-hook undohist-initialize))
 
 (setup (:elpaca mwim)
   (:bind "C-a" mwim-beginning-of-code-or-line
@@ -712,6 +713,9 @@ The ORDER can be used to deduce the feature context."
   )
 
 (setup feature
+
+  (:init (ffap-bindings))
+
   (:option delete-selection-mode t
            global-so-long-mode t
            global-subword-mode t
@@ -722,56 +726,56 @@ The ORDER can be used to deduce the feature context."
            tramp-backup-directory-alist backup-directory-alist ;; Tramp
            )
 
-  (:hooks on-init-ui-hook (lambda () (setopt kill-buffer-delete-auto-save-files t
-					word-wrap t
-					truncate-lines nil
-					interprogram-cut-function #'gui-select-text
-					word-wrap-by-category t
-					truncate-partial-width-windows nil
-					ring-bell-function nil
-					indicate-buffer-boundaries nil
-					indicate-empty-lines nil
-					history-length 1000
-					create-lockfiles nil
-					delete-auto-save-files t
-					auto-save-no-message t
-					auto-save-include-big-deletions t
-					use-short-answers t
-					read-buffer-completion-ignore-case t
-					;; C Source
-					save-interprogram-paste-before-kill t
-					kill-ring-max 200
-					kill-do-not-save-duplicates t
-					indent-tabs-mode nil
-					eval-expression-print-length nil
-					eval-expression-print-level nil
-					read-extended-command-predicate #'command-completion-default-include-p
-					blink-matching-paren t
-					blink-matching-paren-on-screen t
-					;; simple
-					select-enable-clipboard t
-					select-enable-primary nil
-					;; select
-					comment-multi-line t
-					comment-empty-lines t
-					;; newcomment
-					read-answer-short t
-					;; map-ynp
-					sentence-end-double-space nil
-					;; paragraph
-					elisp-fontify-semantically t
-					;; elisp-mode
-					ad-redefinition-action 'accept
-					;; advice
-					delete-pair-blink-delay 0.03
-					;; lisp
-					lazy-highlight-initial-delay 0
-					;; isearch
-					read-file-name-completion-ignore-case t
-					;; minibuffer
-					auto-save-list-file-prefix (file-name-concat user-emacs-directory "var/auto-save-list/.saves-")
-					;; startup
-					)))
+  (:hooks emacs-startup-hook (lambda () (setopt kill-buffer-delete-auto-save-files t
+					   word-wrap t
+					   truncate-lines nil
+					   interprogram-cut-function #'gui-select-text
+					   word-wrap-by-category t
+					   truncate-partial-width-windows nil
+					   ring-bell-function nil
+					   indicate-buffer-boundaries nil
+					   indicate-empty-lines nil
+					   history-length 1000
+					   create-lockfiles nil
+					   delete-auto-save-files t
+					   auto-save-no-message t
+					   auto-save-include-big-deletions t
+					   use-short-answers t
+					   read-buffer-completion-ignore-case t
+					   ;; C Source
+					   save-interprogram-paste-before-kill t
+					   kill-ring-max 200
+					   kill-do-not-save-duplicates t
+					   indent-tabs-mode nil
+					   eval-expression-print-length nil
+					   eval-expression-print-level nil
+					   read-extended-command-predicate #'command-completion-default-include-p
+					   blink-matching-paren t
+					   blink-matching-paren-on-screen t
+					   ;; simple
+					   select-enable-clipboard t
+					   select-enable-primary nil
+					   ;; select
+					   comment-multi-line t
+					   comment-empty-lines t
+					   ;; newcomment
+					   read-answer-short t
+					   ;; map-ynp
+					   sentence-end-double-space nil
+					   ;; paragraph
+					   elisp-fontify-semantically t
+					   ;; elisp-mode
+					   ad-redefinition-action 'accept
+					   ;; advice
+					   delete-pair-blink-delay 0.03
+					   ;; lisp
+					   lazy-highlight-initial-delay 0
+					   ;; isearch
+					   read-file-name-completion-ignore-case t
+					   ;; minibuffer
+					   auto-save-list-file-prefix (file-name-concat user-emacs-directory "var/auto-save-list/.saves-")
+					   ;; startup
+					   )))
 
   (setq-default custom-file (expand-file-name "custom.el" user-emacs-directory))
   (load custom-file :no-error-if-file-is-missing)
@@ -883,6 +887,7 @@ The ORDER can be used to deduce the feature context."
   )
 
 (setup files
+  (auto-save-visited-mode +1)
   (:option auto-save-default t
            make-backup-files nil
            backup-directory-alist `(("." . ,(file-name-concat user-emacs-directory "var/backup/")))
@@ -1184,21 +1189,6 @@ The ORDER can be used to deduce the feature context."
            which-key-add-column-padding 1
            which-key-max-description-length 40))
 
-(setup (:elpaca fzf)
-  (:option fzf/args "-x --color bw --print-query --margin=1,0 --no-hscroll"
-           fzf/executable "fzf"
-           fzf/git-grep-args "-i --line-number %s"
-           ;; command used for `fzf-grep-*` functions
-           ;; example usage for ripgrep:
-           fzf/grep-command "rg --no-heading -nH"
-           ;; fzf/grep-command "grep -nrH"
-           ;; If nil, the fzf buffer will appear at the top of the window
-           fzf/position-bottom t
-           fzf/window-height 15))
-
-(setup (:elpaca rg)
-  (rg-enable-default-bindings))
-
 (setup (:elpaca cape)
 
   (add-to-list 'completion-at-point-functions #'cape-file)
@@ -1257,8 +1247,22 @@ The ORDER can be used to deduce the feature context."
   (:init (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)))
 
 (setup (:elpaca consult)
+  (:init (setq register-preview-delay 0.5
+               register-preview-function #'consult-register-format)
+         (with-eval-after-load 'xref
+           (setq xref-show-xrefs-function #'consult-xref
+                 xref-show-definitions-function #'consult-xref)
+           (setq xref-prompt-for-identifier '(not xref-find-definitions
+                                                  xref-find-definitions-other-window
+                                                  xref-find-definitions-other-frame
+                                                  xref-find-references)))
+         (define-key read-expression-map (kbd "C-r") #'consult-history))
+
+  (:advice register-preview :override consult-register-window)
+
   (:option consult-narrow-key "<"
            consult-line-numbers-widen t
+           consult-line-start-from-top nil
            consult-async-min-input 2
            consult-async-refresh-delay  0.15
            consult-async-input-throttle 0.2
@@ -1269,25 +1273,53 @@ The ORDER can be used to deduce the feature context."
              ;; https://github.com/sharkdp/fd/issues/839
              "--full-path --absolute-path"
              "--hidden --exclude .git"
-             (if (featurep :system 'windows) "--path-separator=/")))
+             (if (featurep :system 'windows) "--path-separator=/"))
+           consult-project-root-function (lambda ()
+                                           (when-let* ((project (project-current)))
+                                             (car (project-root project))))
+           )
 
-  (:init
-   (setq register-preview-delay 0.5
-         register-preview-function #'consult-register-format)
-   (advice-add #'register-preview :override #'consult-register-window)
-   (with-eval-after-load 'xref
-     (setq xref-show-xrefs-function #'consult-xref
-           xref-show-definitions-function #'consult-xref)))
-  (add-hook 'completion-list-mode-hook #'consult-preview-at-point-mode)
+  (:hooks completion-list-mode-hook consult-preview-at-point-mode
+          completion-setup-hook (lambda () (consult-customize
+                                       consult-ripgrep consult-git-grep consult-grep
+                                       consult-bookmark consult-recent-file
+                                       consult--source-recent-file
+                                       consult--source-project-recent-file
+                                       consult--source-bookmark :preview-key "C-SPC"))
+          completion-setup-hook (lambda () (progn
+                                        (add-to-list 'consult-buffer-sources 'compleseus--source-window-buffers)
+                                        (add-to-list 'consult-buffer-sources 'compleseus--source-workspace-buffers))))
 
-  (require 'consult)
-  (global-set-key (kbd "C-s") 'consult-line)
-  (consult-customize
-   consult-ripgrep consult-git-grep consult-grep
-   consult-bookmark consult-recent-file
-   consult--source-recent-file
-   consult--source-project-recent-file
-   consult--source-bookmark :preview-key "C-SPC"))
+  (keymap-global-set "C-c h" 'consult-history)
+  (keymap-global-set "C-c m" 'consult-mode-command)
+  (keymap-global-set "C-c b"  'consult-bookmark)
+  (keymap-global-set "C-c k"  'consult-kmacro)
+  (keymap-global-set "C-x b"  'consult-buffer)
+  (keymap-global-set "M-#"  'consult-register-load)
+  (keymap-global-set "M-'"  'consult-register-store)
+  (keymap-global-set "C-M-#"  'consult-register)
+  (keymap-global-set "M-y"  'consult-yank-pop)
+  (keymap-global-set "M-g e"  'consult-compile-error)
+  (keymap-global-set "M-g f"  'consult-flymake)
+  (keymap-global-set "M-g g"  'consult-goto-line)
+  (keymap-global-set "M-g M-g" 'consult-goto-line)
+  (keymap-global-set "M-g o"  'consult-outline)
+  (keymap-global-set "M-g m"  'consult-mark)
+  (keymap-global-set "M-g k"  'consult-global-mark)
+  (keymap-global-set "M-g i"  'consult-imenu)
+  (keymap-global-set "M-g I"  'consult-imenu-multi)
+  (keymap-global-set "M-s f"  'consult-find)
+  (keymap-global-set "M-s L"  'consult-locate)
+  (keymap-global-set "M-s g"  'consult-grep)
+  (keymap-global-set "M-s G"  'consult-git-grep)
+  (keymap-global-set "M-s r"  'consult-ripgrep)
+  (keymap-global-set "M-s k"  'consult-keep-lines)
+  (keymap-global-set "M-s u"  'consult-focus-lines)
+
+  (keymap-global-set "M-s e"  'consult-isearch-history)
+  (keymap-global-set "C-s"  'consult-line)
+
+  )
 
 (setup icomplete-mode
   (:option tab-always-indent 'complete
@@ -1304,46 +1336,39 @@ The ORDER can be used to deduce the feature context."
            resize-mini-windows 'grow-only
            icomplete-matches-format nil)
   (:bind "M-/" completion-at-point)
-  (icomplete-vertical-mode -1))
+  (:custom icomplete-vertical-mode -1))
 
 (setup (:elpaca vertico)
-  (vertico-mode)
-  (:option vertico-cycle t)
-  (:hooks vertico-mode-hook nerd-icons-completion-mode))
+  (:init (vertico-mode))
+  (:option vertico-cycle t))
 
 (setup (:elpaca orderless)
-  (:custom completion-styles '(orderless basic)
-           completion-category-overrides '((file (styles partial-completion)))
+  (:option completion-styles '(orderless basic)
            completion-category-defaults nil
-           completion-pcm-leading-wildcard t)
-
-  (defun flex-if-twiddle (pattern _index _total)
-    (when (string-suffix-p "~" pattern)
-      `(orderless-flex . ,(substring pattern 0 -1))))
-
-  (defun first-initialism (pattern index _total)
-    (if (= index 0) 'orderless-initialism))
-
-  (defun not-if-bang (pattern _index _total)
-    (cond
-     ((equal "!" pattern)
-      #'ignore)
-     ((string-prefix-p "!" pattern)
-      `(orderless-not . ,(substring pattern 1)))))
-
-  (:option orderless-matching-styles '(orderless-regexp)
-           orderless-style-dispatchers '(orderless-affix-dispatch
-                                         first-initialism
-                                         flex-if-twiddle
-                                         not-if-bang)
+           completion-category-overrides '((file (styles partial-completion)))
            orderless-component-separator #'orderless-escapable-split-on-space))
 
 (setup (:elpaca nerd-icons-completion)
-  (nerd-icons-completion-mode))
+  (:init (nerd-icons-completion-mode))
+  (:hooks elpaca-after-init-hook nerd-icons-completion-mode))
+
+(setup (:elpaca embark)
+  (:init (setq prefix-help-command #'embark-prefix-help-command))
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                 nil
+                 (window-parameters (mode-line-format . none))))
+
+  (keymap-global-set "C-." (function embark-act))
+  (keymap-global-set "C-;" (function embark-dwim))
+  (keymap-global-set "C-h B" (function embark-bindings)))
+
+(setup (:elpaca embark-consult)
+  (:hooks embark-collect-mode consult-preview-at-point-mode))
 
 (setup (:elpaca marginalia)
-  (marginalia-mode)
-  (:option marginalia-max-relative-age 0
+  (:init (marginalia-mode))
+  (:custom marginalia-max-relative-age 0
            marginalia-align 'right)
   (:hooks marginalia-mode-hook nerd-icons-completion-marginalia-setup))
 
@@ -1354,11 +1379,11 @@ The ORDER can be used to deduce the feature context."
            ibuffer-jump-offer-only-visible-buffers t
            ibuffer-human-readable-size t)
   (:option ibuffer-formats
-         '((mark modified read-only locked
-	         " " (name 55 55 :left :elide)
-	         " " (size 8 -1 :right)
-	         " " (mode 18 18 :left :elide) " " filename-and-process)
-           (mark " " (name 16 -1) " " filename)))
+           '((mark modified read-only locked
+	           " " (name 55 55 :left :elide)
+	           " " (size 8 -1 :right)
+	           " " (mode 18 18 :left :elide) " " filename-and-process)
+             (mark " " (name 16 -1) " " filename)))
   (:bind "C-x C-b" ibuffer))
 
 (setup (:elpaca nerd-icons-ibuffer)
@@ -1460,14 +1485,13 @@ The ORDER can be used to deduce the feature context."
          projectile-known-projects-file (file-name-concat user-emacs-directory "var/projects.eld")
          projectile-ignored-project-function t
          projectile-fd-executable 'fd))
+
   (:bind [remap evil-jump-to-tag] projectile-find-tag
          [remap find-tag]         #'projectile-find-tag)
 
   (put 'projectile-ag 'disabled "Use +default/search-project instead")
   (put 'projectile-ripgrep 'disabled "Use +default/search-project instead")
   (put 'projectile-grep 'disabled "Use +default/search-project instead")
-
-  (add-hook 'on-first-file-hook #'(lambda () (add-to-list 'projectile-project-root-files-bottom-up ".project")))
 
   (:option projectile-project-root-files '()
            projectile-project-root-files-top-down-recurring '("Makefile")))
@@ -1492,7 +1516,7 @@ The ORDER can be used to deduce the feature context."
   (:bind [remap xref-find-definitions] lsp-ui-peek-find-definitions
          [remap xref-find-references] lsp-ui-peek-find-references)
   (add-hook 'lsp-mode-hook #'lsp-ui-mode)
-  (add-hook 'on-first-input-hook #'lsp-ui-set-doc-border))
+  (add-hook 'lsp-mode-hook #'lsp-ui-set-doc-border))
 
 (setup module
   (:load lang-apl)
