@@ -210,11 +210,19 @@ The ORDER can be used to deduce the feature context."
 	   (add-to-list 'recentf-exclude list))))
 
 (setup recentf
-  (:init (run-with-idle-timer 10 nil #'recentf-cleanup))
-  (:hooks elpaca-after-init-hook recentf-mode)
+  (:autoload recentf-cleanup)
+  (:hooks elpaca-after-init-hook recentf-mode
+          kill-emacs-hook recentf-cleanup)
   (:option recentf-max-saved-items 256
-           recentf-auto-cleanup 'mode
-           recentf-exclude nil))
+           recentf-auto-cleanup 360
+           recentf-show-file-shortcuts-flag nil
+           recentf-exclude
+           '("\\.tar$" "\\.tbz2$" "\\.tbz$" "\\.tgz$" "\\.bz2$"
+             "\\.bz$" "\\.gz$" "\\.gzip$" "\\.xz$" "\\.zip$"
+             "\\.7z$" "\\.rar$"
+             "COMMIT_EDITMSG\\'"
+             "\\.\\(?:gz\\|gif\\|svg\\|png\\|jpe?g\\|bmp\\|xpm\\)$"
+             "-autoloads\\.el$" "autoload\\.el$")))
 
 (setup savehist
   (:hooks elpaca-after-init-hook savehist-mode)
@@ -1519,7 +1527,7 @@ The ORDER can be used to deduce the feature context."
   (add-hook 'lsp-mode-hook #'lsp-ui-set-doc-border))
 
 (setup module
-  (:load lang-apl)
+  (:load lang-typst)
   (:load-incremental lang-org))
 
 (setup (:elpaca markdown-mode)
