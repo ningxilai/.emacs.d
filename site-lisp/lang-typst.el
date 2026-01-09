@@ -5,7 +5,7 @@
 ;;; code:
 
 (setup (:elpaca typst-ts-mode)
-  (add-to-list 'auto-mode-alist '(".*\\.typ$" . "typst"))
+  (add-to-list 'auto-mode-alist '(".*\\.typ$" . typst-ts-mode))
   (:custom typst-ts-indent-offset 2
            ;; don't add "--open" if you'd like `watch` to be an error detector
            typst-ts-mode-watch-options "--open"
