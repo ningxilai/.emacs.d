@@ -8,8 +8,8 @@
   (:custom haskell-process-suggest-remove-import-lines t  ; warnings for redundant imports etc
            haskell-process-auto-import-loaded-modules t
            haskell-process-show-overlays t)
-  (:hooks haskell-mode (haskell-collapse-mode interactive-haskell-mode)
-          haskell-mode (lambda()(setq-local yas-indent-line 'fixed))
+  (:hooks haskell-mode-hook (haskell-collapse-mode interactive-haskell-mode)
+          haskell-mode-hook (lambda()(setq-local yas-indent-line 'fixed))
           haskell-mode-local-vars lsp-haskell
           haskell-literate-mode-local-vars lsp-haskell))
 

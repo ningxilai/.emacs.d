@@ -1,4 +1,4 @@
-;; setup-load.el -*- lexical-binding: t -*-
+;;; setup-load.el -*- lexical-binding: t -*-
 
 (require 'cl-lib)
 

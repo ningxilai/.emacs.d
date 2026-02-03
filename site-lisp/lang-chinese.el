@@ -24,21 +24,20 @@
          :foreground-color "#c4cdd3"
          :font "LXGW Wenkai"
          :internal-border-width 10))
-  (add-hook 'post-command-hook
-            #'(lambda ()
-                (progn
-                  (defvar input-method-cursor-color "Orange"
-                    "Default cursor color if using an input method.")
+  (:hooks post-command-hook (lambda ()
+                              (progn
+                                (defvar input-method-cursor-color "Orange"
+                                  "Default cursor color if using an input method.")
 
-                  (defvar default-cursor-color (frame-parameter nil 'cursor-color)
-                    "Default text cursor color.")
+                                (defvar default-cursor-color (frame-parameter nil 'cursor-color)
+                                  "Default text cursor color.")
 
-                  (defun change-cursor-color-on-input-method ()
-                    "Set cursor color depending on whether an input method is used or not."
-                    (interactive)
-                    (set-cursor-color (if current-input-method
-                                          input-method-cursor-color
-                                        default-cursor-color)))))))
+                                (defun change-cursor-color-on-input-method ()
+                                  "Set cursor color depending on whether an input method is used or not."
+                                  (interactive)
+                                  (set-cursor-color (if current-input-method
+                                                        input-method-cursor-color
+                                                      default-cursor-color)))))))
 
 (setup (:elpaca fanyi)
   (:custom

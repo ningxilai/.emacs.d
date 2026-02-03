@@ -9,9 +9,9 @@
   (add-to-list 'interpreter-mode-alist '("dyalogscript\\(\\.bash\\)?" . dyalog-mode))
   (:init (setq dyalog-fix-whitespace-before-save t
                dyalog-leading-spaces 0))
-  (:hooks dyalog-mode (lambda () (progn (electric-pair-mode -1)
-                                   (buffer-face-set '(:family "BQN386 Unicode" :height 125))
-                                   (buffer-face-mode))))
+  (:hooks dyalog-mode-hook (lambda () (progn (electric-pair-mode -1)
+                                        (buffer-face-set '(:family "BQN386 Unicode" :height 125))
+                                        (buffer-face-mode))))
   (:option modify-syntax-entry ?# ". 1" dyalog-mode-syntax-table
            modify-syntax-entry ?! ". 2<" dyalog-mode-syntax-table)
   (:custom dyalog-keyword-chars "×≤≥≠∨∧÷∊⍴↑↓⍳○←→⌈⌊∘⍎⍕⊂⊃⊆⊇∩∪⊥⊤⍨⍒⍋⌽⍉⊖⍟⍱⍲⍬⌹≡≢⍪⌿⍀⍺⍵⎕⍞⋄⍷⍸⌷⍣⊣⊢⌶⌺⍥⍠⌸⍤"))

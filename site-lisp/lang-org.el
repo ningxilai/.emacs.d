@@ -241,24 +241,26 @@
 (setup (:elpaca org-contrib))
 
 (setup (:elpaca toc-org)
-  (:hooks org-mode toc-org-mode))
+  (:hooks org-mode-hook toc-org-mode))
 
 (setup (:elpaca htmlize))
 
 (setup (:elpaca one :host github :repo "tonyaldon/one.el" :build (:not compile)))
 
+(setup (:elpaca jack :host github :repo "tonyaldon/jack.el" :build (:not compile)))
+
 (setup (:elpaca org-margin :host github :repo "rougier/org-margin")
-  (:hooks org-mode org-margin-mode))
+  (:hooks org-mode-hook (lambda()(org-margin-mode 1))))
 
 (setup (:elpaca valign)
   (:custom valign-fancy-bar t)
-  (:hooks org-mode valign-mode))
+  (:hooks org-mode-hook valign-mode))
 
 (setup (:elpaca org-edit-indirect)
-  (:hooks org-mode org-edit-indirect-mode))
+  (:hooks org-mode-hook org-edit-indirect-mode))
 
 (setup (:elpaca org-appear)
-  (:hooks org-mode org-appear-mode)
+  (:hooks org-mode-hook org-appear-mode)
   (:custom org-appear-inside-latex t
            org-appear-autokeywords t
            org-appear-autoentities t

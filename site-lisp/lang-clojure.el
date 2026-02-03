@@ -19,14 +19,14 @@
            clojure-ts-semantic-indent-rules '(("->" . ((:block 1)))
                                               ("->>" . ((:block 1)))))
 
-  (add-hook 'clojure-ts-mode-hook #'cider-mode)
+  (:hooks clojure-ts-mode-hook cider-mode)
 
   (cl-callf2 rassq-delete-all 'clojure-ts-clojurescript-mode auto-mode-alist)
   (cl-callf2 rassq-delete-all 'clojure-ts-clojurec-mode auto-mode-alist)
   (cl-callf2 rassq-delete-all 'clojure-ts-clojuredart-mode auto-mode-alist)
   (cl-callf2 rassq-delete-all 'clojure-ts-jank-mode auto-mode-alist)
   (cl-callf2 rassq-delete-all 'clojure-ts-joker-mode auto-mode-alist)
-  (:hooks clojure-ts-mode (lambda () (progn (require 'flycheck-clj-kondo) (flycheck-mode 1)))))
+  (:hooks clojure-ts-mode-hook (lambda () (progn (require 'flycheck-clj-kondo) (flycheck-mode 1)))))
 
 (setup (:elpaca cider)
   (:option nrepl-hide-special-buffers t
@@ -50,8 +50,8 @@
            cider-repl-pop-to-buffer-on-connect 'display-only))
 
 (setup (:elpaca clj-refactor)
-  (:hooks clojure-mode clj-refactor-mode
-          clojure-ts-mode clj-refactor-mode))
+  (:hooks clojure-mode-hook clj-refactor-mode
+          clojure-ts-mode-hook clj-refactor-mode))
 
 (setup (:elpaca sesman))
 (setup (:elpaca spinner))

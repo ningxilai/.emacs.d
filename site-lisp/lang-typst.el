@@ -40,21 +40,23 @@
                 (browse-url full-url)))
              (_
               (let* ((browse-url-generic-program (executable-find browser))
-	             (browse-url-browser-function 'browse-url-generic))
-	        (browse-url full-url))))))
+                     (browse-url-browser-function 'browse-url-generic))
+                (browse-url full-url))))))
        (defun +typst-preview-open-browser ()
          "Open typst-preview browser interactively."
          (interactive)
          (let* ((browser-list '("miniwindow" "default" "google chrome"))
-	        (browser (completing-read "Browser: " browser-list nil nil)))
-           (typst-preview--connect-browser browser (typst-preview--master-static-host typst-preview--local-master))))
+                (browser (completing-read "Browser: " browser-list nil nil)))
+           (+typst-preview--connect-browser browser (typst-preview--master-static-host typst-preview--local-master))))
 
-       (:bind "C-c C-t p" typst-preview-start)
        (:advice typst-preview--connect-browser :override +typst-preview--connect-browser
                 typst-preview-open-browser :override +typst-preview-open-browser)
-       (:option typst-preview-browser "miniwindow"
-                typst-preview-cmd-options '("--features" "html"))
-       (:custom typst-preview-executable "tinymist preview"))
+       (:bind "C-c C-j" typst-preview-send-position)
+       (:custom typst-preview-browser "miniwindow"
+                typst-preview-invert-colors "auto"
+                typst-preview-executable "tinymist"
+                typst-preview-cmd-options '("--features" "html")
+                typst-preview-partial-rendering t))
 
 (provide 'lang-typst)
 ;;; ends here
