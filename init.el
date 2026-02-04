@@ -343,9 +343,7 @@ The ORDER can be used to deduce the feature context."
            dirvish-attributes
            '(vc-state file-size git-msg subtree-state collapse file-time))
   (:bind "C-c C-r" dirvish-rsync)
-  (:hooks dirvish-directory-view-mode-hook diredfl-mode
-          dirvish-directory-view-mode-hook centaur-tabs-local-mode)
-  )
+  (:hooks dirvish-directory-view-mode-hook diredfl-mode))
 
 (setup (:elpaca nerd-icons-dired)
   (:init (defface nerd-icons-dired-dir-face
@@ -386,7 +384,7 @@ The ORDER can be used to deduce the feature context."
   (+nanolize)
   (advice-add 'enable-theme :after '+nanolize)
 
-  (load-theme 'doom-nord t nil))
+  (:init (load-theme 'doom-nord t nil)))
 
 (setup (:elpaca doom-modeline)
   (doom-modeline-mode +1)
@@ -438,23 +436,6 @@ The ORDER can be used to deduce the feature context."
 	       ("\nOther"
 		("Projects" project-switch-project "p"))))))
   )
-
-(setup (:elpaca centaur-tabs)
-  (:init (centaur-tabs-mode t))
-  (:custom
-   centaur-tabs-style "bar"
-   centaur-tabs-height 32
-   centaur-tabs-set-icons t
-   centaur-tabs-show-new-tab-button t
-   centaur-tabs-set-modified-marker t
-   centaur-tabs-show-navigation-buttons t
-   centaur-tabs-set-bar 'under
-   centaur-tabs-show-count nil
-   x-underline-at-descent-line t
-   centaur-tabs-left-edge-margin nil)
-  (:bind
-   "C-<prior>" centaur-tabs-backward
-   "C-<next>" centaur-tabs-forward))
 
 (setup (:elpaca macrostep)
   (define-key emacs-lisp-mode-map (kbd "C-c e") #'macrostep-expand)
@@ -512,11 +493,11 @@ The ORDER can be used to deduce the feature context."
   (:custom indent-bars-face '((t (:height 1.08))))
   (:option
    indent-bars-display-on-blank-lines t
-   indent-bars-width-frac 0.2
+   indent-bars-width-frac 0.1
    indent-bars-zigzag nil
    indent-bars-highlight-current-depth nil
-   indent-bars-pattern "⎸"
-   indent-bars-prefer-character t
+   indent-bars-pattern "│"
+   indent-bars-prefer-character nil
    indent-bars-color '(highlight :face-bg t :blend 0.225)
    indent-bars-no-descend-string t)
   (require 'indent-bars-ts)
@@ -643,7 +624,7 @@ The ORDER can be used to deduce the feature context."
           prog-mode-hook (lambda () (setq-local show-trailing-whitespace t))))
 
 (setup (:elpaca whitespace-cleanup-mode)
-  (:hooks before-save-hook global-whitespace-cleanup-mode))
+  (:hooks before-save-hook whitespace-cleanup))
 
 (setup (:elpaca dtrt-indent)
   (defmacro space/hide-lighter (mode)
@@ -697,6 +678,72 @@ The ORDER can be used to deduce the feature context."
                      split-width-threshold 120
                      pop-up-windows nil))))
 
+  (add-hook 'after-init-hook
+            #'(lambda () (progn (defface nano-default '((t)) "")   (defface nano-default-i '((t)) "")
+                           (defface nano-highlight '((t)) "") (defface nano-highlight-i '((t)) "")
+                           (defface nano-subtle '((t)) "")    (defface nano-subtle-i '((t)) "")
+                           (defface nano-faded '((t)) "")     (defface nano-faded-i '((t)) "")
+                           (defface nano-salient '((t)) "")   (defface nano-salient-i '((t)) "")
+                           (defface nano-popout '((t)) "")    (defface nano-popout-i '((t)) "")
+                           (defface nano-strong '((t)) "")    (defface nano-strong-i '((t)) "")
+                           (defface nano-critical '((t)) "")  (defface nano-critical-i '((t)) "")
+
+                           (defun nano-set-face (name &optional foreground background weight)
+                             "Set NAME and NAME-i faces with given FOREGROUND, BACKGROUND and WEIGHT"
+
+                             (apply #'set-face-attribute `(,name nil
+                                                                 ,@(when foreground `(:foreground ,foreground))
+                                                                 ,@(when background `(:background ,background))
+                                                                 ,@(when weight `(:weight ,weight))))
+                             (apply #'set-face-attribute `(,(intern (concat (symbol-name name) "-i")) nil
+                                                           :foreground ,(face-background 'nano-default)
+                                                           ,@(when foreground `(:background ,foreground))
+                                                           :weight regular)))
+
+                           (set-face-attribute 'header-line nil
+                                               :background 'unspecified
+                                               :underline nil
+                                               :box `( :line-width 1
+                                                       :color ,(face-background 'nano-default))
+                                               :inherit 'nano-subtle)
+
+                           (nano-set-face 'nano-default "#37474F" "#FFFFFF") ;; Blue Grey / L800
+                           (nano-set-face 'nano-strong "#000000" nil 'regular) ;; Black
+                           (nano-set-face 'nano-highlight nil "#FAFAFA") ;; Very Light Grey
+                           (nano-set-face 'nano-subtle nil "#ECEFF1") ;; Blue Grey / L50
+                           (nano-set-face 'nano-faded "#90A4AE") ;; Blue Grey / L300
+                           (nano-set-face 'nano-salient "#673AB7") ;; Deep Purple / L500
+                           (nano-set-face 'nano-popout "#FFAB91") ;; Deep Orange / L200
+                           (nano-set-face 'nano-critical "#FF6F00") ;; Amber / L900
+
+                           (nano-set-face 'nano-default "#ECEFF4" "#2E3440") ;; Snow Storm 3
+                           (nano-set-face 'nano-strong "#ECEFF4" nil 'regular) ;; Polar Night 0
+                           (nano-set-face 'nano-highlight nil "#3B4252")  ;; Polar Night 1
+                           (nano-set-face 'nano-subtle nil "#434C5E") ;; Polar Night 2
+                           (nano-set-face 'nano-faded "#677691") ;;
+                           (nano-set-face 'nano-salient "#81A1C1")  ;; Frost 2
+                           (nano-set-face 'nano-popout "#D08770") ;; Aurora 1
+                           (nano-set-face 'nano-critical "#EBCB8B") ;; Aurora 2
+
+                           (setopt header-line-format
+                                   '(:eval
+                                     (let ((prefix (cond (buffer-read-only     '("RO" . nano-salient-i))
+                                                         ((buffer-modified-p)  '("**" . nano-faded))
+                                                         (t                    '("RW" . nano-faded-i))))
+                                           (mode (concat "(" (downcase (cond ((consp mode-name) (car mode-name))
+                                                                             ((stringp mode-name) mode-name)
+                                                                             (t "unknow")))
+                                                         " mode)"))
+                                           (coords (format-mode-line "%c:%l ")))
+                                       (list
+                                        (propertize " " 'face (cdr prefix)  'display '(raise -0.25))
+                                        (propertize (car prefix) 'face (cdr prefix))
+                                        (propertize " " 'face (cdr prefix) 'display '(raise +0.25))
+                                        (propertize (format-mode-line " %b ") 'face 'nano-strong)
+                                        (propertize mode 'face 'header-line)
+                                        (propertize " " 'display `(space :align-to (- right ,(length coords))))
+                                        (propertize coords 'face 'nano-faded))))))))
+
   (setopt minibuffer-prompt-properties
           '(read-only t intangible t cursor-intangible t face minibuffer-prompt))
   (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
@@ -706,6 +753,7 @@ The ORDER can be used to deduce the feature context."
   (setopt window-resize-pixelwise t)
 
   )
+
 
 (setup feature
 
@@ -830,7 +878,7 @@ The ORDER can be used to deduce the feature context."
                   (eq major-mode initial-major-mode))
         (funcall initial-major-mode))))
 
-  (global-set-key (kbd "C-c e") 'switch-to-enlight-buffer)
+  (global-set-key (kbd "C-c C-e") 'switch-to-enlight-buffer)
 
   ;; copy by nano
 
@@ -1513,7 +1561,7 @@ The ORDER can be used to deduce the feature context."
   (:hooks lsp-mode-hook lsp-ui-mode
           lsp-mode-hook lsp-ui-set-doc-border))
 
-(setup module (:load lang-latex))
+(setup module (:load lang-latex lang-org))
 
 (setup (:elpaca jinx)
   (:hooks text-mode-hook jinx-mode)
@@ -1530,16 +1578,12 @@ The ORDER can be used to deduce the feature context."
            ))
 
 (setup (:elpaca markdown-mode)
-  (:with-hook markdown-mode-hook (:hook electric-quote-mode pandoc-mode)))
-
-(setup (:elpaca pandoc-mode)
-  (:hooks pandoc-mode-hooks pandoc-load-default-settings))
+  (:with-hook markdown-mode-hook (:hook electric-quote-mode)))
 
 (setup (:elpaca hyperbole :host github :repo "emacsmirror/hyperbole")
   (:option hywiki-directory (concat user-emacs-directory "etc/hywiki/"))
-  (require 'hpath)
-  (require 'hbut)
-  (setq hpath:external-display-alist-x
-        (list (cons (format "\\.\\(%s\\)$"
-                            hpath:external-file-suffixes)
-                    "xdg-open"))))
+  (:require hpath hbut)
+  (:custom hpath:external-display-alist-x
+           (list (cons (format "\\.\\(%s\\)$"
+                               hpath:external-file-suffixes)
+                       "xdg-open"))))

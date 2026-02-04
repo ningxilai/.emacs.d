@@ -245,10 +245,6 @@
 
 (setup (:elpaca htmlize))
 
-(setup (:elpaca one :host github :repo "tonyaldon/one.el" :build (:not compile)))
-
-(setup (:elpaca jack :host github :repo "tonyaldon/jack.el" :build (:not compile)))
-
 (setup (:elpaca org-margin :host github :repo "rougier/org-margin")
   (:hooks org-mode-hook (lambda()(org-margin-mode 1))))
 
