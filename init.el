@@ -18,37 +18,37 @@
     (defvar elpaca-builds-directory (expand-file-name "emacs/elpaca/builds/" (xdg-cache-home)))
     (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
     (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
-				  :ref nil :depth 1 :inherit ignore
-				  :files (:defaults "elpaca-test.el" (:exclude "extensions"))
-				  :build (:not elpaca--activate-package)))
+                                  :ref nil :depth 1 :inherit ignore
+                                  :files (:defaults "elpaca-test.el" (:exclude "extensions"))
+                                  :build (:not elpaca--activate-package)))
     (let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
-	   (build (expand-file-name "elpaca/" elpaca-builds-directory))
-	   (order (cdr elpaca-order))
-	   (default-directory repo))
+           (build (expand-file-name "elpaca/" elpaca-builds-directory))
+           (order (cdr elpaca-order))
+           (default-directory repo))
       (add-to-list 'load-path (if (file-exists-p build) build repo))
       (unless (file-exists-p repo)
-	(make-directory repo t)
-	(when (<= emacs-major-version 28) (require 'subr-x))
-	(condition-case-unless-debug err
-	    (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
-		      ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
-						      ,@(when-let* ((depth (plist-get order :depth)))
-							  (list (format "--depth=%d" depth) "--no-single-branch"))
-						      ,(plist-get order :repo) ,repo))))
-		      ((zerop (call-process "git" nil buffer t "checkout"
-					    (or (plist-get order :ref) "--"))))
-		      (emacs (concat invocation-directory invocation-name))
-		      ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
-					    "--eval" "(byte-recompile-directory \".\" 0 'force)")))
-		      ((require 'elpaca))
-		      ((elpaca-generate-autoloads "elpaca" repo)))
-		(progn (message "%s" (buffer-string)) (kill-buffer buffer))
-	      (error "%s" (with-current-buffer buffer (buffer-string))))
-	  ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+        (make-directory repo t)
+        (when (<= emacs-major-version 28) (require 'subr-x))
+        (condition-case-unless-debug err
+            (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+                      ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
+                                                      ,@(when-let* ((depth (plist-get order :depth)))
+                                                          (list (format "--depth=%d" depth) "--no-single-branch"))
+                                                      ,(plist-get order :repo) ,repo))))
+                      ((zerop (call-process "git" nil buffer t "checkout"
+                                            (or (plist-get order :ref) "--"))))
+                      (emacs (concat invocation-directory invocation-name))
+                      ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                            "--eval" "(byte-recompile-directory \".\" 0 'force)")))
+                      ((require 'elpaca))
+                      ((elpaca-generate-autoloads "elpaca" repo)))
+                (progn (message "%s" (buffer-string)) (kill-buffer buffer))
+              (error "%s" (with-current-buffer buffer (buffer-string))))
+          ((error) (warn "%s" err) (delete-directory repo 'recursive))))
       (unless (require 'elpaca-autoloads nil t)
-	(require 'elpaca)
-	(elpaca-generate-autoloads "elpaca" repo)
-	(let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
+        (require 'elpaca)
+        (elpaca-generate-autoloads "elpaca" repo)
+        (let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
     (add-hook 'after-init-hook #'elpaca-process-queues)
     (elpaca `(,@elpaca-order))
 
@@ -63,18 +63,18 @@ This happens regardless of the value associated with :disabled.
 The expansion is a string indicating the package has been disabled."
     (declare (indent 1))
     (if (memq :disabled body)
-	(format "%S :disabled by elpaca-setup" order)
+        (format "%S :disabled by elpaca-setup" order)
       (let ((o order))
-	(when-let* ((ensure (cl-position :ensure body)))
-	  (setq o (if (null (nth (1+ ensure) body)) nil order)
-		body (append (cl-subseq body 0 ensure)
-			     (cl-subseq body (+ ensure 2)))))
-	`(elpaca ,o (setup
-			,(if-let* (((memq (car-safe order) '(quote \`)))
-				   (feature (flatten-tree order)))
-			     (cadr feature)
-			   (elpaca--first order))
-		      ,@body)))))
+        (when-let* ((ensure (cl-position :ensure body)))
+          (setq o (if (null (nth (1+ ensure) body)) nil order)
+                body (append (cl-subseq body 0 ensure)
+                             (cl-subseq body (+ ensure 2)))))
+        `(elpaca ,o (setup
+                        ,(if-let* (((memq (car-safe order) '(quote \`)))
+                                   (feature (flatten-tree order)))
+                             (cadr feature)
+                           (elpaca--first order))
+                      ,@body)))))
 
   (elpaca setup (require 'setup))
 
@@ -85,7 +85,7 @@ The expansion is a string indicating the package has been disabled."
 The body is wrapped in an `elpaca' block if `setup-attributes'
 contains an alist with the key `elpaca'."
     (if (assq 'elpaca setup-attributes)
-	`(elpaca ,(cdr (assq 'elpaca setup-attributes)) ,@(macroexp-unprogn body))
+        `(elpaca ,(cdr (assq 'elpaca setup-attributes)) ,@(macroexp-unprogn body))
       body))
   ;; Add the wrapper function
   (add-to-list 'setup-modifier-list #'setup-wrap-to-install-package)
@@ -93,10 +93,10 @@ contains an alist with the key `elpaca'."
   (setup-define :elpaca
     (lambda (order &rest recipe)
       (push (cond
-	     ((eq order t) `(elpaca . ,(setup-get 'feature)))
-	     ((eq order nil) '(elpaca . nil))
-	     (`(elpaca . (,order ,@recipe))))
-	    setup-attributes)
+             ((eq order t) `(elpaca . ,(setup-get 'feature)))
+             ((eq order nil) '(elpaca . nil))
+             (`(elpaca . (,order ,@recipe))))
+            setup-attributes)
       ;; If the macro wouldn't return nil, it would try to insert the result of
       ;; `push' which is the new value of the modified list. As this value usually
       ;; cannot be evaluated, it is better to return nil which the byte compiler
@@ -110,13 +110,13 @@ The ORDER can be used to deduce the feature context."
     (setup-make-setter
      (lambda (name)
        `(funcall (or (get ',name 'custom-get)
-		     #'symbol-value)
-		 ',name))
+                     #'symbol-value)
+                 ',name))
      (lambda (name val)
        `(progn
-	  (custom-load-symbol ',name)
-	  (funcall (or (get ',name 'custom-set) #'set-default)
-		   ',name ,val))))
+          (custom-load-symbol ',name)
+          (funcall (or (get ',name 'custom-set) #'set-default)
+                   ',name ,val))))
 
     :documentation "Like default `:option', but set variables after the feature is loaded."
     :debug '(sexp form)
@@ -167,21 +167,33 @@ The ORDER can be used to deduce the feature context."
     :ensure '(nil nil func)
     :repeatable t)
 
+  (setup-define :silence
+    (lambda (&rest body)
+      (cl-letf (((symbol-function 'message) (function format)))
+        ,(macroexp-progn body)))
+    :debug '(setup)
+    :documentation "Evaluate BODY but keep the echo era clean.")
+
+  (setup-define :delay
+    (lambda (time &rest body)
+      `(run-with-idle-timer ,time nil (lambda nil ,@body)))
+    :indent 1
+    :documentation "Delay loading BODY until a certain amount of idle time has passed.")
+
 ;;; warning
 
   (dolist (dir '("lisp" "site-lisp"))
     (push (expand-file-name dir user-emacs-directory) load-path))
 
   (require 'setup-load)
-  (require 'setup-extend)
 
   )
 
 (setup (:elpaca gcmh)
   (:hooks elpaca-after-init-hook gcmh-mode)
   (:option gcmh-idle-delay 'auto
-	   gcmh-auto-idle-delay-factor 10
-	   gcmh-high-cons-threshold (* 16 1024 1024)))
+           gcmh-auto-idle-delay-factor 10
+           gcmh-high-cons-threshold (* 16 1024 1024)))
 
 (setup (:elpaca async)
   (:option async-bytecomp-package-mode t))
@@ -196,8 +208,8 @@ The ORDER can be used to deduce the feature context."
            (make-directory dir t)
            (setq lock-file-name-transforms `((".*" ,dir t))))
 
-	 (dolist (list '(no-littering-etc-directory no-littering-var-directory))
-	   (add-to-list 'recentf-exclude list))))
+         (dolist (list '(no-littering-etc-directory no-littering-var-directory))
+           (add-to-list 'recentf-exclude list))))
 
 (setup recentf
   (:autoload recentf-cleanup)
@@ -359,27 +371,27 @@ The ORDER can be used to deduce the feature context."
   (defun +nanolize (&rest args)
     (interactive)
     (let* ((background
-	    (plist-get (custom-face-attributes-get 'default nil)
-		       :background))
-	   (mode-line
-	    (plist-get (custom-face-attributes-get 'mode-line nil)
-		       :background))
-	   (mode-line-active
-	    (or (plist-get (custom-face-attributes-get 'mode-line-active nil)
-			   :background)
-	        mode-line))
-	   (mode-line-inactive
-	    (or (plist-get (custom-face-attributes-get 'mode-line-inactive nil)
-			   :background)
-	        mode-line)))
+            (plist-get (custom-face-attributes-get 'default nil)
+                       :background))
+           (mode-line
+            (plist-get (custom-face-attributes-get 'mode-line nil)
+                       :background))
+           (mode-line-active
+            (or (plist-get (custom-face-attributes-get 'mode-line-active nil)
+                           :background)
+                mode-line))
+           (mode-line-inactive
+            (or (plist-get (custom-face-attributes-get 'mode-line-inactive nil)
+                           :background)
+                mode-line)))
       (dolist (face '(window-divider
-		      window-divider-first-pixel
-		      window-divider-last-pixel))
-	(set-face-attribute face nil :foreground background))
+                      window-divider-first-pixel
+                      window-divider-last-pixel))
+        (set-face-attribute face nil :foreground background))
       (set-face-attribute 'mode-line-active nil
-			  :box `(:line-width 1 :color ,mode-line-active :style nil))
+                          :box `(:line-width 1 :color ,mode-line-active :style nil))
       (set-face-attribute 'mode-line-inactive nil
-			  :box `(:line-width 1 :color ,mode-line-inactive :style nil))))
+                          :box `(:line-width 1 :color ,mode-line-inactive :style nil))))
 
   (+nanolize)
   (advice-add 'enable-theme :after '+nanolize)
@@ -389,16 +401,16 @@ The ORDER can be used to deduce the feature context."
 (setup (:elpaca doom-modeline)
   (doom-modeline-mode +1)
   (:option doom-modeline-bar-width 3
-	   doom-modeline-github nil
-	   doom-modeline-mu4e nil
-	   doom-modeline-persp-name nil
-	   doom-modeline-minor-modes nil
-	   doom-modeline-major-mode-icon nil
-	   doom-modeline-buffer-file-name-style 'relative-from-project
-	   ;; Only show file encoding if it's non-UTF-8 and different line endings
-	   ;; than the current OSes preference
-	   doom-modeline-buffer-encoding 'nondefault
-	   doom-modeline-default-eol-type (if (featurep :system 'windows) 1 0))
+           doom-modeline-github nil
+           doom-modeline-mu4e nil
+           doom-modeline-persp-name nil
+           doom-modeline-minor-modes nil
+           doom-modeline-major-mode-icon nil
+           doom-modeline-buffer-file-name-style 'relative-from-project
+           ;; Only show file encoding if it's non-UTF-8 and different line endings
+           ;; than the current OSes preference
+           doom-modeline-buffer-encoding 'nondefault
+           doom-modeline-default-eol-type (if (featurep :system 'windows) 1 0))
   )
 
 (setup (:elpaca enlight)
@@ -413,59 +425,63 @@ The ORDER can be used to deduce the feature context."
     (interactive "P")
     (let ((exists (get-buffer "*enlight*")))
       (if arg
-	  (switch-to-buffer-other-window (get-buffer-create "*enlight*"))
-	(switch-to-buffer (get-buffer-create "*enlight*")))
+          (switch-to-buffer-other-window (get-buffer-create "*enlight*"))
+        (switch-to-buffer (get-buffer-create "*enlight*")))
       (unless (or exists
-		  (eq major-mode initial-major-mode))
-	(funcall initial-major-mode))))
+                  (eq major-mode initial-major-mode))
+        (funcall initial-major-mode))))
 
   (global-set-key (kbd "C-c s") 'switch-to-scratch-buffer)
-
+  (:require grid)
   (:custom enlight-content
-	   (concat
-	    (propertize "MENU" 'face 'highlight)
-	    "\n\n"
-	    (enlight-menu
-	     '(("\nOrg Mode"
-		("Org-Agenda (current day)" (org-agenda nil "a") "a"))
-	       ("\nFolder"
-		("Hypr folder" (dired "~/.config/hypr/") "h")
-		("Documents folder" (dired "~/Documents/") "d"))
-	       ("\nInit"
-		("init.el" (dired "~/.config/emacs/") "i"))
-	       ("\nOther"
-		("Projects" project-switch-project "p"))))))
-  )
+           (concat
+            (propertize "MENU" 'face 'highlight)
+            "\n\n"
+            (enlight-menu
+             '(("\nOrg Mode"
+                ("Org-Agenda (current day)" (org-agenda nil "a") "a"))
+               ("\nFolder"
+                ("Hypr folder" (dired "~/.config/hypr/") "h")
+                ("Documents folder" (dired "~/Documents/") "d"))
+               ("\nInit"
+                ("init.el" (dired "~/.config/emacs/") "i"))
+               ("\nOther"
+                ("Projects" project-switch-project "p")))))))
+
+(setup (:elpaca grid :host github :repo "ichernyshovvv/grid.el"))
 
 (setup (:elpaca macrostep)
   (define-key emacs-lisp-mode-map (kbd "C-c e") #'macrostep-expand)
   (define-key lisp-interaction-mode-map (kbd "C-c e") #'macrostep-expand))
 
 (setup electric
-  (:hooks write-file-functions check-parens)
 
-  (defadvice hungry-delete-backward
-      (before sp-delete-pair-advice activate)
-    (save-match-data (sp-delete-pair (ad-get-arg 0))))
+  (defun lisp-setup-check-parens () (add-hook 'write-file-functions #'check-parens nil t))
+
+  (:hooks emacs-lisp-mode-hook  lisp-setup-check-parens)
+
   (:option electric-pair-mode t
            electric-indent-mode t
            electric-layout-mode t)
   (setopt electric-pair-inhibit-predicate 'electric-pair-conservative-inhibit
           electric-pair-text-pairs '((34 . 34)
-				     (8216 . 8217)
-				     (8220 . 8221)
-				     (?\“ . ?\”)
-				     (?\{ . ?\})
+                                     (8216 . 8217)
+                                     (8220 . 8221)
+                                     (?\“ . ?\”)
+                                     (?\{ . ?\})
                                      (?\《. ?\》)
-				     (?\「. ?\」)
-				     (?\< . ?\>)
-				     (?\【. ?\】))))
+                                     (?\「. ?\」)
+                                     (?\< . ?\>)
+                                     (?\【. ?\】))))
 
 (setup (:elpaca smartparens)
-  (require 'smartparens-config)
-  (setopt sp-max-prefix-length 25
-          sp-max-pair-length 4)
+  (:require smartparens-config)
+  (:option sp-max-prefix-length 25
+           sp-max-pair-length 4)
   (add-to-list 'sp-lisp-modes 'sly-mrepl-mode)
+  (defadvice hungry-delete-backward
+      (before sp-delete-pair-advice activate)
+    (save-match-data (sp-delete-pair (ad-get-arg 0))))
   (:hooks emacs-lisp-mode-hook smartparens-mode)
   (sp-local-pair '(minibuffer-mode minibuffer-inactive-mode) "'" nil :actions nil)
   (sp-local-pair '(minibuffer-mode minibuffer-inactive-mode) "`" nil :actions nil)
@@ -502,21 +518,21 @@ The ORDER can be used to deduce the feature context."
    indent-bars-no-descend-string t)
   (require 'indent-bars-ts)
   (setopt indent-bars-treesit-ignore-blank-lines-types '("module")
-	  indent-bars-treesit-scope '((python
-				       function_definition
-				       class_definition
-				       for_statement
-				       if_statement
-				       with_statement
-				       while_statement)))
+          indent-bars-treesit-scope '((python
+                                       function_definition
+                                       class_definition
+                                       for_statement
+                                       if_statement
+                                       with_statement
+                                       while_statement)))
   (:hooks prog-mode-hook indent-bars-mode
           yaml-mode-hook indent-bars-mode))
 
 (setup hl-line
   (:option  hl-line-sticky-flag nil
-	    global-hl-line-sticky-flag nil
-	    hl-line-range-function (lambda () (cons (line-end-position)
-					       (line-beginning-position 2))))
+            global-hl-line-sticky-flag nil
+            hl-line-range-function (lambda () (cons (line-end-position)
+                                               (line-beginning-position 2))))
   (:hooks prog-mode-hook hl-line-mode))
 
 (setup (:elpaca diff-hl)
@@ -524,8 +540,8 @@ The ORDER can be used to deduce the feature context."
 
 (setup ediff
   (:option ediff-keep-variants nil
-	   ediff-split-window-function 'split-window-horizontally
-	   ediff-window-setup-function 'ediff-setup-windows-plain))
+           ediff-split-window-function 'split-window-horizontally
+           ediff-window-setup-function 'ediff-setup-windows-plain))
 
 (setup pixel-scroll
 
@@ -534,13 +550,13 @@ The ORDER can be used to deduce the feature context."
   (defun +pixel-scroll-interpolate-down (&optional lines)
     (interactive)
     (if lines
-	(pixel-scroll-precision-interpolate (* -1 lines (pixel-line-height)))
+        (pixel-scroll-precision-interpolate (* -1 lines (pixel-line-height)))
       (pixel-scroll-interpolate-down)))
 
   (defun +pixel-scroll-interpolate-up (&optional lines)
     (interactive)
     (if lines
-	(pixel-scroll-precision-interpolate (* lines (pixel-line-height)))
+        (pixel-scroll-precision-interpolate (* lines (pixel-line-height)))
       (pixel-scroll-interpolate-up)))
 
   (defalias 'scroll-up-command '+pixel-scroll-interpolate-down)
@@ -570,9 +586,9 @@ The ORDER can be used to deduce the feature context."
 
 (setup uniquify
   (:custom uniquify-buffer-name-style 'forward
-	   uniquify-strip-common-suffix t
-	   uniquify-after-kill-buffer-p t
-	   uniquify-separator "/"))
+           uniquify-strip-common-suffix t
+           uniquify-after-kill-buffer-p t
+           uniquify-separator "/"))
 
 (setup linum
   (dolist (mode '(bookmark-bmenu-mode-hook))
@@ -584,13 +600,13 @@ The ORDER can be used to deduce the feature context."
 (setup autorevert
   (global-auto-revert-mode 1)
   (:option revert-without-query (list ".")
-	   auto-revert-stop-on-user-input nil
-	   auto-revert-mode-text ""
-	   auto-revert-avoid-polling t
-	   auto-revert-verbose nil
+           auto-revert-stop-on-user-input nil
+           auto-revert-mode-text ""
+           auto-revert-avoid-polling t
+           auto-revert-verbose nil
            auto-revert-remote-files nil)
   (:init (setopt global-auto-revert-non-file-buffers t
-		 global-auto-revert-ignore-modes '(Buffer-menu-mode))))
+                 global-auto-revert-ignore-modes '(Buffer-menu-mode))))
 
 (setup (:elpaca elisp-autofmt)
   (:hooks emacs-lisp-mode-hook elisp-autofmt-mode))
@@ -614,12 +630,15 @@ The ORDER can be used to deduce the feature context."
   (whitespace-mode +1)
   (:init
    (setq-default which-func-update-delay 0.2
-		 show-trailing-whitespace nil))
+                 show-trailing-whitespace nil))
   (:option
    whitespace-line-column nil
    whitespace-style '(faces tab-mark missing-newline-at-eof)
    whitespace-display-mappings `((tab-mark ?\t [,(make-glyph-code ?» 'whitespace-tab) ?\t] )))
-  (:custom indicate-empty-lines nil)
+  (:custom indicate-empty-lines nil
+           whitespace-style '(face
+                              trailing space-before-tab
+                              indentation empty space-after-tab))
   (:hooks before-save-hook delete-trailing-whitespace-mode
           prog-mode-hook (lambda () (setq-local show-trailing-whitespace t))))
 
@@ -633,7 +652,7 @@ The ORDER can be used to deduce the feature context."
   (space/hide-lighter dtrt-indent-mode)
 
   (:hooks prog-mode-hook (lambda () (dtrt-indent-mode)
-			   (dtrt-indent-adapt))))
+                           (dtrt-indent-adapt))))
 
 (setup (:elpaca unfill)
   (:bind [remap fill-paragraph] unfill-toggle))
@@ -643,22 +662,22 @@ The ORDER can be used to deduce the feature context."
 
 (setup (:elpaca visual-fill-column :host codeberg :repo "tarsiiformes/visual-fill-column")
   (:init (advice-add 'text-scale-increase :after #'visual-fill-column-adjust)
-	 (advice-add 'text-scale-decrease :after #'visual-fill-column-adjust))
+         (advice-add 'text-scale-decrease :after #'visual-fill-column-adjust))
   (:option visual-fill-column-center-text t
            visual-fill-column-width 100))
 
 (setup vundo-mode (:elpaca vundo)
        (:bind "C-x C-u" vundo
-	      "<ESC>" vundo-quit)
+              "<ESC>" vundo-quit)
        (:option vundo-glyph-alist vundo-unicode-symbols
-		vundo-compact-display t))
+                vundo-compact-display t))
 
 (setup (:elpaca undohist)
   (:hooks first-change-hook undohist-initialize))
 
 (setup (:elpaca mwim)
   (:bind "C-a" mwim-beginning-of-code-or-line
-	 "C-e" mwim-end-of-code-or-line))
+         "C-e" mwim-end-of-code-or-line))
 
 (setup (:elpaca page-break-lines)
   (:init (global-page-break-lines-mode t))
@@ -672,7 +691,7 @@ The ORDER can be used to deduce the feature context."
   (set-display-table-slot standard-display-table 'wrap (make-glyph-code ?–))
 
   (add-hook 'emacs-startup-hook
-	    #'(lambda()(with-no-warnings
+            #'(lambda()(with-no-warnings
                     (setopt ;; window.el config
                      split-height-threshold 80
                      split-width-threshold 120
@@ -770,62 +789,62 @@ The ORDER can be used to deduce the feature context."
            )
 
   (:hooks emacs-startup-hook (lambda () (setopt kill-buffer-delete-auto-save-files t
-					   word-wrap t
-					   truncate-lines nil
-					   interprogram-cut-function #'gui-select-text
-					   word-wrap-by-category t
-					   truncate-partial-width-windows nil
-					   ring-bell-function nil
-					   indicate-buffer-boundaries nil
-					   indicate-empty-lines nil
-					   history-length 1000
-					   create-lockfiles nil
-					   delete-auto-save-files t
-					   auto-save-no-message t
-					   auto-save-include-big-deletions t
-					   use-short-answers t
-					   read-buffer-completion-ignore-case t
-					   ;; C Source
-					   save-interprogram-paste-before-kill t
-					   kill-ring-max 200
-					   kill-do-not-save-duplicates t
-					   indent-tabs-mode nil
-					   eval-expression-print-length nil
-					   eval-expression-print-level nil
-					   read-extended-command-predicate #'command-completion-default-include-p
-					   blink-matching-paren t
-					   blink-matching-paren-on-screen t
-					   ;; simple
-					   select-enable-clipboard t
-					   select-enable-primary nil
-					   ;; select
-					   comment-multi-line t
-					   comment-empty-lines t
-					   ;; newcomment
-					   read-answer-short t
-					   ;; map-ynp
-					   sentence-end-double-space nil
-					   ;; paragraph
-					   elisp-fontify-semantically t
-					   ;; elisp-mode
-					   ad-redefinition-action 'accept
-					   ;; advice
-					   delete-pair-blink-delay 0.03
-					   ;; lisp
-					   lazy-highlight-initial-delay 0
-					   ;; isearch
-					   read-file-name-completion-ignore-case t
-					   ;; minibuffer
-					   auto-save-list-file-prefix (file-name-concat user-emacs-directory "var/auto-save-list/.saves-")
-					   ;; startup
-					   )))
+                                           word-wrap t
+                                           truncate-lines nil
+                                           interprogram-cut-function #'gui-select-text
+                                           word-wrap-by-category t
+                                           truncate-partial-width-windows nil
+                                           ring-bell-function nil
+                                           indicate-buffer-boundaries nil
+                                           indicate-empty-lines nil
+                                           history-length 1000
+                                           create-lockfiles nil
+                                           delete-auto-save-files t
+                                           auto-save-no-message t
+                                           auto-save-include-big-deletions t
+                                           use-short-answers t
+                                           read-buffer-completion-ignore-case t
+                                           ;; C Source
+                                           save-interprogram-paste-before-kill t
+                                           kill-ring-max 200
+                                           kill-do-not-save-duplicates t
+                                           indent-tabs-mode nil
+                                           eval-expression-print-length nil
+                                           eval-expression-print-level nil
+                                           read-extended-command-predicate #'command-completion-default-include-p
+                                           blink-matching-paren t
+                                           blink-matching-paren-on-screen t
+                                           ;; simple
+                                           select-enable-clipboard t
+                                           select-enable-primary nil
+                                           ;; select
+                                           comment-multi-line t
+                                           comment-empty-lines t
+                                           ;; newcomment
+                                           read-answer-short t
+                                           ;; map-ynp
+                                           sentence-end-double-space nil
+                                           ;; paragraph
+                                           elisp-fontify-semantically t
+                                           ;; elisp-mode
+                                           ad-redefinition-action 'accept
+                                           ;; advice
+                                           delete-pair-blink-delay 0.03
+                                           ;; lisp
+                                           lazy-highlight-initial-delay 0
+                                           ;; isearch
+                                           read-file-name-completion-ignore-case t
+                                           ;; minibuffer
+                                           auto-save-list-file-prefix (file-name-concat user-emacs-directory "var/auto-save-list/.saves-")
+                                           ;; startup
+                                           )))
 
   (setq-default custom-file (expand-file-name "custom.el" user-emacs-directory))
   (load custom-file :no-error-if-file-is-missing)
 
   (add-hook 'text-mode-hook #'(lambda () (progn (abbrev-mode)
-					   (visual-line-mode)
-					   (setq-local auto-composition-mode nil
+                                           (visual-line-mode)
+                                           (setq-local auto-composition-mode nil
                                                        text-mode-ispell-word-completion nil))))
 
   (defun logging-disabled-command (&optional cmd keys)
@@ -835,32 +854,42 @@ The ORDER can be used to deduce the feature context."
 
   (setq-default disabled-command-function #'logging-disabled-command)
 
+  ;;AIGC
+
+  (defun +advice--split-and-move-to-new-window (orig-fn &rest args)
+    "Advice: call original function then move to new window."
+    (apply orig-fn args)
+    (other-window 1))
+
+  (advice-add 'split-window-below :around #'+advice--split-and-move-to-new-window)
+  (advice-add 'split-window-right :around #'+advice--split-and-move-to-new-window)
+
   ;; copy by emacswiki
 
   (defun toggle-window-split ()
     (interactive)
     (if (= (count-windows) 2)
         (let* ((this-win-buffer (window-buffer))
-	       (next-win-buffer (window-buffer (next-window)))
-	       (this-win-edges (window-edges (selected-window)))
-	       (next-win-edges (window-edges (next-window)))
-	       (this-win-2nd (not (and (<= (car this-win-edges)
-					   (car next-win-edges))
-				       (<= (cadr this-win-edges)
-					   (cadr next-win-edges)))))
-	       (splitter
-	        (if (= (car this-win-edges)
-	               (car (window-edges (next-window))))
-	            'split-window-horizontally
-	          'split-window-vertically)))
-	  (delete-other-windows)
-	  (let ((first-win (selected-window)))
-	    (funcall splitter)
-	    (if this-win-2nd (other-window 1))
-	    (set-window-buffer (selected-window) this-win-buffer)
-	    (set-window-buffer (next-window) next-win-buffer)
-	    (select-window first-win)
-	    (if this-win-2nd (other-window 1))))))
+               (next-win-buffer (window-buffer (next-window)))
+               (this-win-edges (window-edges (selected-window)))
+               (next-win-edges (window-edges (next-window)))
+               (this-win-2nd (not (and (<= (car this-win-edges)
+                                           (car next-win-edges))
+                                       (<= (cadr this-win-edges)
+                                           (cadr next-win-edges)))))
+               (splitter
+                (if (= (car this-win-edges)
+                       (car (window-edges (next-window))))
+                    'split-window-horizontally
+                  'split-window-vertically)))
+          (delete-other-windows)
+          (let ((first-win (selected-window)))
+            (funcall splitter)
+            (if this-win-2nd (other-window 1))
+            (set-window-buffer (selected-window) this-win-buffer)
+            (set-window-buffer (next-window) next-win-buffer)
+            (select-window first-win)
+            (if this-win-2nd (other-window 1))))))
 
   (global-set-key (kbd "C-x t") 'toggle-window-split)
 
@@ -901,32 +930,6 @@ The ORDER can be used to deduce the feature context."
 
   (global-set-key (kbd "C-x C-c") 'nano-kill)
 
-  ;; copy by emacs-china
-
-  ;; fronzen emacs situation
-
-  (defun spray-mode-usr2-handler ()
-    "Handle case where spray mode timer is left running when the w3m
-    buffer it is spraying is killed inadvertently instead of stopping
-    spray mode first and won't respond to C-g or other mechanisms.
-    This will stop spray mode via an external signal: pkill -USR2
-    emacs.
-    SRC https://emacs.stackexchange.com/a/70000/37266 ."
-    (interactive)
-    ;; arbitrary elisp you wish to execute:
-    (message "Got USR2 signal")
-    (spray-stop))
-  (global-set-key [signal usr2] 'spray-mode-usr2-handler)
-  ;; ............. ^ here we register the event handler that will
-  ;; automatically be called when send-usr2-signal-to-emacs fires
-
-  (defun send-usr2-signal-to-emacs ()
-    "Send pkill -USR2 emacs without command line.
-    SRC https://emacs.stackexchange.com/a/70000/37266 ."
-    (interactive)
-    (signal-process (emacs-pid) 'sigusr2))
-  (global-set-key (kbd "M-G") 'send-usr2-signal-to-emacs)
-
   )
 
 (setup files
@@ -946,14 +949,13 @@ The ORDER can be used to deduce the feature context."
            require-final-newline t))
 
 (setup fontset
-  (:init
-   (set-face-attribute 'default (selected-frame)
-		       :height 110
-		       :weight 'light :family "Lilex Nerd Font") ;; SF Mono
-   (set-face-attribute 'bold (selected-frame)
-		       :weight 'regular)
-   (set-face-attribute 'bold-italic (selected-frame)
-		       :weight 'regular))
+  (:init (set-face-attribute 'default (selected-frame)
+                             :height 110
+                             :weight 'light :family "Lilex Nerd Font") ;; SF Mono
+         (set-face-attribute 'bold (selected-frame)
+                             :weight 'regular)
+         (set-face-attribute 'bold-italic (selected-frame)
+                             :weight 'regular))
 
   (set-char-table-range composition-function-table ?f '(["\\(?:ff?[fijlt]\\)" 0 font-shape-gstring]))
   (set-char-table-range composition-function-table ?T '(["\\(?:Th\\)" 0 font-shape-gstring]))
@@ -963,194 +965,108 @@ The ORDER can be used to deduce the feature context."
   (set-fontset-font t 'greek (font-spec :family "Catrinity" :weight 'normal :slant 'normal))
 
   (set-fontset-font t 'emoji
-		    (cond
-		     ((member "Noto Emoji" (font-family-list)) "Noto Emoji")
-		     ((member "Symbola" (font-family-list)) "Symbola")
-		     ((member "Apple Color Emoji" (font-family-list)) "Apple Color Emoji")
-		     ((member "Noto Color Emoji" (font-family-list)) "Noto Color Emoji")
-		     ((member "Segoe UI Emoji" (font-family-list)) "Segoe UI Emoji")
-		     ))
+                    (cond
+                     ((member "Noto Emoji" (font-family-list)) "Noto Emoji")
+                     ((member "Symbola" (font-family-list)) "Symbola")
+                     ((member "Apple Color Emoji" (font-family-list)) "Apple Color Emoji")
+                     ((member "Noto Color Emoji" (font-family-list)) "Noto Color Emoji")
+                     ((member "Segoe UI Emoji" (font-family-list)) "Segoe UI Emoji")
+                     ))
 
   (set-fontset-font t 'han
-		    (cond
-		     ((member "LXGW WenKai" (font-family-list)) "LXGW WenKai")
-		     ((member "Zhuque Fangsong (technical preview)" (font-family-list)) "Zhuque Fangsong (technical preview)")
-		     ((member "PingFang SC" (font-family-list)) "PingFang SC")
-		     ((member "方正柳公权楷书 简繁" (font-family-list)) "方正柳公权楷书 简繁")
-		     ((member "Sarasa Term SC Nerd" (font-family-list)) "Sarasa Term SC Nerd")
-		     ((member "WenQuanYi Micro Hei" (font-family-list)) "WenQuanYi Micro Hei")
-		     ((member "WenQuanYi Zen Hei" (font-family-list)) "WenQuanYi Zen Hei")
-		     ((member "Microsoft YaHei" (font-family-list)) "Microsoft YaHei")
-		     ))
+                    (cond
+                     ((member "LXGW WenKai" (font-family-list)) "LXGW WenKai")
+                     ((member "Zhuque Fangsong (technical preview)" (font-family-list)) "Zhuque Fangsong (technical preview)")
+                     ((member "PingFang SC" (font-family-list)) "PingFang SC")
+                     ((member "方正柳公权楷书 简繁" (font-family-list)) "方正柳公权楷书 简繁")
+                     ((member "Sarasa Term SC Nerd" (font-family-list)) "Sarasa Term SC Nerd")
+                     ((member "WenQuanYi Micro Hei" (font-family-list)) "WenQuanYi Micro Hei")
+                     ((member "WenQuanYi Zen Hei" (font-family-list)) "WenQuanYi Zen Hei")
+                     ((member "Microsoft YaHei" (font-family-list)) "Microsoft YaHei")
+                     ))
 
   (set-fontset-font t 'cjk-misc
-		    (cond
-		     ((member "Noto Serif CJK SC" (font-family-list)) "Noto Serif CJK SC")
-		     ((member "Sarasa UI J" (font-family-list)) "Sarasa UI J")
-		     ))
+                    (cond
+                     ((member "Noto Serif CJK SC" (font-family-list)) "Noto Serif CJK SC")
+                     ((member "Sarasa UI J" (font-family-list)) "Sarasa UI J")
+                     ))
   (set-fontset-font t 'kana (font-spec :family "Sarasa Gothic" :weight 'normal :slant 'normal))
   (set-fontset-font t 'bopomofo (font-spec :family "Symbola" :weight 'normal :slant 'normal))
 
   (dolist (char/ligature-re
-	   `((?-  . ,(rx (or (or "-->" "-<<" "->>" "-|" "-~" "-<" "->") (+ "-"))))
-	     (?/  . ,(rx (or (or "/==" "/=" "/>" "/**" "/*") (+ "/"))))
-	     (?*  . ,(rx (or (or "*>" "*/") (+ "*"))))
-	     (?<  . ,(rx (or (or "<<=" "<<-" "<|||" "<==>" "<!--" "<=>" "<||" "<|>" "<-<" "<==" "<=<" "<-|" "<~>" "<=|" "<~~" "<$>" "<+>" "</>" "<*>" "<->" "<=" "<|" "<:" "<>"  "<$" "<-" "<~" "<+" "</" "<*")
-			     (+ "<"))))
-	     (?:  . ,(rx (or (or ":?>" "::=" ":>" ":<" ":?" ":=") (+ ":"))))
-	     (?=  . ,(rx (or (or "=>>" "==>" "=/=" "=!=" "=>" "=:=") (+ "="))))
-	     (?!  . ,(rx (or (or "!==" "!=") (+ "!"))))
-	     (?>  . ,(rx (or (or ">>-" ">>=" ">=>" ">]" ">:" ">-" ">=") (+ ">"))))
-	     (?&  . ,(rx (+ "&")))
-	     (?|  . ,(rx (or (or "|->" "|||>" "||>" "|=>" "||-" "||=" "|-" "|>" "|]" "|}" "|=")
-			     (+ "|"))))
-	     (?.  . ,(rx (or (or ".?" ".=" ".-" "..<") (+ "."))))
-	     (?+  . ,(rx (or "+>" (+ "+"))))
-	     (?\[ . ,(rx (or "[<" "[|")))
-	     (?\{ . ,(rx "{|"))
-	     (?\? . ,(rx (or (or "?." "?=" "?:") (+ "?"))))
-	     (?#  . ,(rx (or (or "#_(" "#[" "#{" "#=" "#!" "#:" "#_" "#?" "#(")
-			     (+ "#"))))
-	     (?\; . ,(rx (+ ";")))
-	     (?_  . ,(rx (or "_|_" "__")))
-	     (?~  . ,(rx (or "~~>" "~~" "~>" "~-" "~@")))
-	     (?$  . ,(rx "$>"))
-	     (?^  . ,(rx "^="))
-	     (?\] . ,(rx "]#"))))
+           `((?-  . ,(rx (or (or "-->" "-<<" "->>" "-|" "-~" "-<" "->") (+ "-"))))
+             (?/  . ,(rx (or (or "/==" "/=" "/>" "/**" "/*") (+ "/"))))
+             (?*  . ,(rx (or (or "*>" "*/") (+ "*"))))
+             (?<  . ,(rx (or (or "<<=" "<<-" "<|||" "<==>" "<!--" "<=>" "<||" "<|>" "<-<" "<==" "<=<" "<-|" "<~>" "<=|" "<~~" "<$>" "<+>" "</>" "<*>" "<->" "<=" "<|" "<:" "<>"  "<$" "<-" "<~" "<+" "</" "<*")
+                             (+ "<"))))
+             (?:  . ,(rx (or (or ":?>" "::=" ":>" ":<" ":?" ":=") (+ ":"))))
+             (?=  . ,(rx (or (or "=>>" "==>" "=/=" "=!=" "=>" "=:=") (+ "="))))
+             (?!  . ,(rx (or (or "!==" "!=") (+ "!"))))
+             (?>  . ,(rx (or (or ">>-" ">>=" ">=>" ">]" ">:" ">-" ">=") (+ ">"))))
+             (?&  . ,(rx (+ "&")))
+             (?|  . ,(rx (or (or "|->" "|||>" "||>" "|=>" "||-" "||=" "|-" "|>" "|]" "|}" "|=")
+                             (+ "|"))))
+             (?.  . ,(rx (or (or ".?" ".=" ".-" "..<") (+ "."))))
+             (?+  . ,(rx (or "+>" (+ "+"))))
+             (?\[ . ,(rx (or "[<" "[|")))
+             (?\{ . ,(rx "{|"))
+             (?\? . ,(rx (or (or "?." "?=" "?:") (+ "?"))))
+             (?#  . ,(rx (or (or "#_(" "#[" "#{" "#=" "#!" "#:" "#_" "#?" "#(")
+                             (+ "#"))))
+             (?\; . ,(rx (+ ";")))
+             (?_  . ,(rx (or "_|_" "__")))
+             (?~  . ,(rx (or "~~>" "~~" "~>" "~-" "~@")))
+             (?$  . ,(rx "$>"))
+             (?^  . ,(rx "^="))
+             (?\] . ,(rx "]#"))))
     (let ((char (car char/ligature-re))
-	  (ligature-re (cdr char/ligature-re)))
+          (ligature-re (cdr char/ligature-re)))
       (set-char-table-range composition-function-table char
-			    `([,ligature-re 0 font-shape-gstring]))))
-  (:option
-   face-font-rescale-alist `(("Symbola"             . 1.3)
-			     ("Microsoft YaHei"     . 1.2)
-			     ("WenQuanYi Zen Hei"   . 1.2)
-			     ("Sarasa Term SC Nerd" . 1.2)
-			     ("PingFang SC"         . 1.16)
-			     ("Lantinghei SC"       . 1.16)
-			     ("Kaiti SC"            . 1.16)
-			     ("Yuanti SC"           . 1.16)
-			     ("Apple Color Emoji"   . 0.91)))
+                            `([,ligature-re 0 font-shape-gstring]))
+      ))
+  (:option face-font-rescale-alist `(("Symbola"             . 1.3)
+                                     ("Microsoft YaHei"     . 1.2)
+                                     ("WenQuanYi Zen Hei"   . 1.2)
+                                     ("Sarasa Term SC Nerd" . 1.2)
+                                     ("PingFang SC"         . 1.16)
+                                     ("Lantinghei SC"       . 1.16)
+                                     ("Kaiti SC"            . 1.16)
+                                     ("Yuanti SC"           . 1.16)
+                                     ("Apple Color Emoji"   . 0.91)))
 
-  (:custom
-   fixed-pitch '((t (:family "SF Mono")))
-   fixed-pitch-serif '((t (:family "SF Mono"))) ;; New York
-   variable-pitch '((t (:family "SF Pro"))) ;; Helvetica Neue
-   )
-  )
+  (:custom fixed-pitch  '(t((:family "SF Mono")))
+           fixed-pitch-serif '(t((:family "SF Mono"))) ;; New York
+           variable-pitch '(t((:family "SF Pro"))) ;; Helvetica Neue
+           ))
 
 (setup (:elpaca fontaine)
   (:init
    (setq fontaine-presets
-	 '((regular
-	    :default-height 120
-	    :default-weight regular
-	    :fixed-pitch-height 1.0
-	    :variable-pitch-height 1.0)
-	   (large
-	    :default-height 140
-	    :default-weight normal
-	    :fixed-pitch-height 1.0
-	    :variable-pitch-height 1.05)
-	   (t
-	    :default-family "Lilex Nerd Font Mono" ;; CaskaydiaCove Nerd Font Mono
-	    :fixed-pitch-family "Lilex Nerd Font Mono" ;; CaskaydiaCove Nerd Font Mono
-	    :variable-pitch-family "Lilex Nerd Font Mono" ;; CaskaydiaCove Nerd Font Mono
-	    :italic-family "IBM Plex Mono" ;; CaskaydiaCove Nerd Font Mono Italic
-	    :blod-family "IBM Plex Serif" ;; CaskaydiaCove Nerd Font Mono Bold
-	    :variable-pitch-weight normal
-	    :bold-weight bold
-	    :italic-slant italic
-	    :line-spacing 0.1)))
+         '((regular
+            :default-height 120
+            :default-weight regular
+            :fixed-pitch-height 1.0
+            :variable-pitch-height 1.0)
+           (large
+            :default-height 140
+            :default-weight normal
+            :fixed-pitch-height 1.0
+            :variable-pitch-height 1.05)
+           (t
+            :default-family "Lilex Nerd Font Mono" ;; CaskaydiaCove Nerd Font Mono
+            :fixed-pitch-family "Lilex Nerd Font Mono" ;; CaskaydiaCove Nerd Font Mono
+            :variable-pitch-family "Lilex Nerd Font Mono" ;; CaskaydiaCove Nerd Font Mono
+            :italic-family "IBM Plex Mono" ;; CaskaydiaCove Nerd Font Mono Italic
+            :blod-family "IBM Plex Serif" ;; CaskaydiaCove Nerd Font Mono Bold
+            :variable-pitch-weight normal
+            :bold-weight bold
+            :italic-slant italic
+            :line-spacing 0.1)))
    )
   (:option fontaine-set-preset 'regular)
   (:hooks kill-emacs-hook fontaine-store-latest-preset)
   (require 'xdg)
   (setq fontaine-latest-state-file (expand-file-name "emacs/fontaine-latest-state.eld" (xdg-cache-home))))
-
-(setup treesit
-
-  (setopt treesit-enabled-modes t
-          treesit-font-lock-level 4)
-
-  (save-match-data
-    (dolist (sym '(auto-mode-alist interpreter-mode-alist))
-      (set sym (cl-loop for (src . fn) in (symbol-value sym)
-                        unless (and (functionp fn)
-                                    (string-match "-ts-mode\\(?:-maybe\\)?$" (symbol-name fn)))
-                        collect (cons src fn)))))
-
-  (:option treesit-language-source-alist
-           '((awk . ("https://github.com/Beaglefoot/tree-sitter-awk.git"))
-             (bash       . ("https://github.com/tree-sitter/tree-sitter-bash.git"))
-             (bibtex . ("https://github.com/latex-lsp/tree-sitter-bibtex.git"))
-             (blueprint . ("https://github.com/huanie/tree-sitter-blueprint.git"))
-             (commonlisp . ("https://github.com/tree-sitter-grammars/tree-sitter-commonlisp"))
-             (c          . ("https://github.com/tree-sitter/tree-sitter-c.git"))
-             (cmake      . ("https://github.com/uyha/tree-sitter-cmake.git"))
-             (cpp        . ("https://github.com/tree-sitter/tree-sitter-cpp.git"))
-             (csharp     . ("https://github.com/tree-sitter/tree-sitter-c-sharp.git"))
-             (css        . ("https://github.com/tree-sitter/tree-sitter-css.git"))
-             (clojure    . ("https://github.com/sogaiu/tree-sitter-clojure.git"))
-             (dockerfile . ("https://github.com/camdencheek/tree-sitter-dockerfile.git"))
-             (go         . ("https://github.com/tree-sitter/tree-sitter-go.git"))
-             (gomod      . ("https://github.com/camdencheek/tree-sitter-go-mod.git"))
-             (html       . ("https://github.com/tree-sitter/tree-sitter-html.git"))
-             (haskell . ("https://github.com/tree-sitter/tree-sitter-haskell" "v0.23.1"))
-             (java       . ("https://github.com/tree-sitter/tree-sitter-java.git"))
-             (javascript . ("https://github.com/tree-sitter/tree-sitter-javascript.git"))
-             (json       . ("https://github.com/tree-sitter/tree-sitter-json.git"))
-             (latex . ("https://github.com/latex-lsp/tree-sitter-latex.git"))
-             (make . ("https://github.com/tree-sitter-grammars/tree-sitter-make.git"))
-             (nu . ("https://github.com/nushell/tree-sitter-nu.git"))
-             (org . ("https://github.com/milisims/tree-sitter-org.git"))
-             (markdown   . ("https://github.com/tree-sitter-grammars/tree-sitter-markdown.git" nil "tree-sitter-markdown/src"))
-             (markdown-inline . ("https://github.com/tree-sitter-grammars/tree-sitter-markdown.git" nil "tree-sitter-markdown-inline/src"))
-             (perl . ("https://github.com/ganezdragon/tree-sitter-perl.git"))
-             (proto . ("https://github.com/mitchellh/tree-sitter-proto.git"))
-             (python     . ("https://github.com/tree-sitter/tree-sitter-python.git"))
-             (r . ("https://github.com/r-lib/tree-sitter-r.git"))
-             (ruby       . ("https://github.com/tree-sitter/tree-sitter-ruby.git"))
-             (rust       . ("https://github.com/tree-sitter/tree-sitter-rust.git"))
-             (sql . ("https://github.com/DerekStride/tree-sitter-sql.git" "gh-page"))
-             (surface . ("https://github.com/connorlay/tree-sitter-surface.git"))
-             (toml       . ("https://github.com/tree-sitter/tree-sitter-toml.git"))
-             (tsx        . ("https://github.com/tree-sitter/tree-sitter-typescript.git" nil "tsx/src"))
-             (typst      . ("https://github.com/uben0/tree-sitter-typst.git"))
-             (typescript . ("https://github.com/tree-sitter/tree-sitter-typescript.git" nil "typescript/src"))
-             (verilog . ("https://github.com/gmlarumbe/tree-sitter-verilog.git"))
-             (vhdl . ("https://github.com/alemuller/tree-sitter-vhdl.git"))
-             (vue . ("https://github.com/tree-sitter-grammars/tree-sitter-vue.git"))
-             (wast . ("https://github.com/wasm-lsp/tree-sitter-wasm.git" nil "wast/src"))
-             (wat . ("https://github.com/wasm-lsp/tree-sitter-wasm.git" nil "wat/src"))
-             (wgsl . ("https://github.com/mehmetoguzderin/tree-sitter-wgsl.git"))
-             (yaml       . ("https://github.com/ikatyang/tree-sitter-yaml.git")))
-
-           major-mode-remap-alist
-           '((c-mode          . c-ts-mode)
-             (c++-mode        . c++-ts-mode)
-             (c-or-c++-mode   . c-or-c++-ts-mode)
-             (cmake-mode      . cmake-ts-mode)
-             (clojure-mode    . clojure-ts-mode)
-             (conf-toml-mode  . toml-ts-mode)
-             (csharp-mode     . csharp-ts-mode)
-             (css-mode        . css-ts-mode)
-             (java-mode       . java-ts-mode)
-             (js-mode         . js-ts-mode)
-             (js-json-mode    . json-ts-mode)
-             (python-mode     . python-ts-mode)
-             (ruby-mode       . ruby-ts-mode)
-             (sh-mode         . bash-ts-mode)
-             (typescript-mode . typescript-ts-mode))
-
-           toml-ts-mode-indent-offset 4
-           rust-ts-mode-indent-offset 4
-           cmake-ts-mode-indent-offset 4
-           json-ts-mode-indent-offset 4
-           go-ts-mode-indent-offset 4)
-
-  (:custom treesit--indent-verbose t
-           treesit--font-lock-verbose nil))
 
 (setup abbrev
   (:hooks org-mode-hook abbrev-mode
@@ -1299,6 +1215,7 @@ The ORDER can be used to deduce the feature context."
                                                   xref-find-definitions-other-window
                                                   xref-find-definitions-other-frame
                                                   xref-find-references)))
+
          (define-key read-expression-map (kbd "C-r") #'consult-history))
 
   (:advice register-preview :override consult-register-window)
@@ -1423,9 +1340,9 @@ The ORDER can be used to deduce the feature context."
            ibuffer-human-readable-size t)
   (:option ibuffer-formats
            '((mark modified read-only locked
-	           " " (name 55 55 :left :elide)
-	           " " (size 8 -1 :right)
-	           " " (mode 18 18 :left :elide) " " filename-and-process)
+                   " " (name 55 55 :left :elide)
+                   " " (size 8 -1 :right)
+                   " " (mode 18 18 :left :elide) " " filename-and-process)
              (mark " " (name 16 -1) " " filename)))
   (:bind "C-x C-b" ibuffer))
 
@@ -1558,32 +1475,221 @@ The ORDER can be used to deduce the feature context."
                                      ,(face-foreground 'font-lock-variable-name-face))))
   (:bind [remap xref-find-definitions] lsp-ui-peek-find-definitions
          [remap xref-find-references] lsp-ui-peek-find-references)
-  (:hooks lsp-mode-hook lsp-ui-mode
-          lsp-mode-hook lsp-ui-set-doc-border))
+  (:option lsp-ui-set-doc-border "#1672")
+  (:hooks lsp-mode-hook lsp-ui-mode))
 
-(setup module (:load lang-latex lang-org))
+(setup treesit
 
-(setup (:elpaca jinx)
-  (:hooks text-mode-hook jinx-mode)
-  (:option jinx-camel-modes '(prog-mode))
-  (:custom jinx-exclude-regexps  '((emacs-lisp-mode "Package-Requires:.*$")
-                                   (t "\\cc"
-                                      "[A-Z]+\\>"         ;; Uppercase words
-                                      "-+\\>"             ;; Hyphens used as lines or bullet points
-                                      "\\w*?[0-9]\\w*\\>" ;; Words with numbers, hex codes
-                                      "[a-z]+://\\S-+"    ;; URI
-                                      "<?[-+_.~a-zA-Z][-+_.~:a-zA-Z0-9]*@[-.a-zA-Z0-9]+>?" ;; Email
-                                      "\\(?:Local Variables\\|End\\):\\s-*$" ;; Local variable indicator
-                                      "jinx-\\(?:languages\\|local-words\\):\\s-+.*$")) ;; Local variables
-           ))
+  (setopt treesit-enabled-modes t
+          treesit-font-lock-level 4)
 
-(setup (:elpaca markdown-mode)
-  (:with-hook markdown-mode-hook (:hook electric-quote-mode)))
+  (save-match-data
+    (dolist (sym '(auto-mode-alist interpreter-mode-alist))
+      (set sym (cl-loop for (src . fn) in (symbol-value sym)
+                        unless (and (functionp fn)
+                                    (string-match "-ts-mode\\(?:-maybe\\)?$" (symbol-name fn)))
+                        collect (cons src fn)))))
 
-(setup (:elpaca hyperbole :host github :repo "emacsmirror/hyperbole")
-  (:option hywiki-directory (concat user-emacs-directory "etc/hywiki/"))
-  (:require hpath hbut)
-  (:custom hpath:external-display-alist-x
-           (list (cons (format "\\.\\(%s\\)$"
-                               hpath:external-file-suffixes)
-                       "xdg-open"))))
+  (:option treesit-language-source-alist
+           '((awk . ("https://github.com/Beaglefoot/tree-sitter-awk.git"))
+             (bash       . ("https://github.com/tree-sitter/tree-sitter-bash.git"))
+             (bibtex . ("https://github.com/latex-lsp/tree-sitter-bibtex.git"))
+             (blueprint . ("https://github.com/huanie/tree-sitter-blueprint.git"))
+             (commonlisp . ("https://github.com/tree-sitter-grammars/tree-sitter-commonlisp"))
+             (c          . ("https://github.com/tree-sitter/tree-sitter-c.git"))
+             (cmake      . ("https://github.com/uyha/tree-sitter-cmake.git"))
+             (cpp        . ("https://github.com/tree-sitter/tree-sitter-cpp.git"))
+             (csharp     . ("https://github.com/tree-sitter/tree-sitter-c-sharp.git"))
+             (css        . ("https://github.com/tree-sitter/tree-sitter-css.git"))
+             (clojure    . ("https://github.com/sogaiu/tree-sitter-clojure.git"))
+             (dockerfile . ("https://github.com/camdencheek/tree-sitter-dockerfile.git"))
+             (go         . ("https://github.com/tree-sitter/tree-sitter-go.git"))
+             (gomod      . ("https://github.com/camdencheek/tree-sitter-go-mod.git"))
+             (html       . ("https://github.com/tree-sitter/tree-sitter-html.git"))
+             (haskell . ("https://github.com/tree-sitter/tree-sitter-haskell.git"))
+             (java       . ("https://github.com/tree-sitter/tree-sitter-java.git"))
+             (javascript . ("https://github.com/tree-sitter/tree-sitter-javascript.git"))
+             (json       . ("https://github.com/tree-sitter/tree-sitter-json.git"))
+             (latex . ("https://github.com/latex-lsp/tree-sitter-latex.git"))
+             (make . ("https://github.com/tree-sitter-grammars/tree-sitter-make.git"))
+             (nu . ("https://github.com/nushell/tree-sitter-nu.git"))
+             (org . ("https://github.com/milisims/tree-sitter-org.git"))
+             (markdown   . ("https://github.com/tree-sitter-grammars/tree-sitter-markdown.git" nil "tree-sitter-markdown/src"))
+             (markdown-inline . ("https://github.com/tree-sitter-grammars/tree-sitter-markdown.git" nil "tree-sitter-markdown-inline/src"))
+             (perl . ("https://github.com/ganezdragon/tree-sitter-perl.git"))
+             (proto . ("https://github.com/mitchellh/tree-sitter-proto.git"))
+             (python     . ("https://github.com/tree-sitter/tree-sitter-python.git"))
+             (r . ("https://github.com/r-lib/tree-sitter-r.git"))
+             (ruby       . ("https://github.com/tree-sitter/tree-sitter-ruby.git"))
+             (rust       . ("https://github.com/tree-sitter/tree-sitter-rust.git"))
+             (sql . ("https://github.com/DerekStride/tree-sitter-sql.git" "gh-page"))
+             (surface . ("https://github.com/connorlay/tree-sitter-surface.git"))
+             (toml       . ("https://github.com/tree-sitter/tree-sitter-toml.git"))
+             (tsx        . ("https://github.com/tree-sitter/tree-sitter-typescript.git" nil "tsx/src"))
+             (typst      . ("https://github.com/uben0/tree-sitter-typst.git"))
+             (typescript . ("https://github.com/tree-sitter/tree-sitter-typescript.git" nil "typescript/src"))
+             (verilog . ("https://github.com/gmlarumbe/tree-sitter-verilog.git"))
+             (vhdl . ("https://github.com/alemuller/tree-sitter-vhdl.git"))
+             (vue . ("https://github.com/tree-sitter-grammars/tree-sitter-vue.git"))
+             (wast . ("https://github.com/wasm-lsp/tree-sitter-wasm.git" nil "wast/src"))
+             (wat . ("https://github.com/wasm-lsp/tree-sitter-wasm.git" nil "wat/src"))
+             (wgsl . ("https://github.com/mehmetoguzderin/tree-sitter-wgsl.git"))
+             (yaml       . ("https://github.com/ikatyang/tree-sitter-yaml.git")))
+
+           major-mode-remap-alist
+           '((c-mode          . c-ts-mode)
+             (c++-mode        . c++-ts-mode)
+             (c-or-c++-mode   . c-or-c++-ts-mode)
+             (cmake-mode      . cmake-ts-mode)
+             (clojure-mode    . clojure-ts-mode)
+             (conf-toml-mode  . toml-ts-mode)
+             (csharp-mode     . csharp-ts-mode)
+             (css-mode        . css-ts-mode)
+             (html-mode       . html-ts-mode)
+             (java-mode       . java-ts-mode)
+             (js-mode         . js-ts-mode)
+             (json-mode       . json-ts-mode)
+             (mhtml-mode      . mhtml-ts-mode  )
+             (python-mode     . python-ts-mode)
+             (ruby-mode       . ruby-ts-mode)
+             (sh-mode         . bash-ts-mode)
+             (typescript-mode . typescript-ts-mode))
+
+           toml-ts-mode-indent-offset 4
+           rust-ts-mode-indent-offset 4
+           cmake-ts-mode-indent-offset 4
+           json-ts-mode-indent-offset 4
+           go-ts-mode-indent-offset 4)
+
+  (:custom treesit--indent-verbose t
+           treesit--font-lock-verbose nil))
+
+(setup (:elpaca hsluv)
+  (:require color)
+  (:require hsluv)
+  (:require cl-lib)
+  (:init (require 'color)
+         (require 'hsluv)
+         (require 'cl-lib)
+
+         (defun perfect-palette (p q &optional hue-start s l luv)
+           "Calculate a perfect palette of P colors with step Q. Return HEX color strings."
+           (let ((hue-start (or hue-start 0))
+                 (s (or s 0))
+                 (l (or l 0))
+                 (omega (/ (float q) p)))
+             (mapcar
+              (lambda (x)
+                (let ((hue (mod (+ hue-start (* x omega)) 1.0)))
+                  (if luv
+                      (hsluv-hpluv-to-hex (list (* 360 hue) s l))
+                    (apply #'color-rgb-to-hex
+                           (append (color-hsl-to-rgb hue (/ s 100.0) (/ l 100.0))
+                                   '(2))))))
+              (number-sequence 0 (1- p) 1))))
+
+         (defvar perfect-palette-override--faces
+           '(font-lock-builtin-face
+             font-lock-comment-face
+             font-lock-constant-face
+             font-lock-function-name-face
+             font-lock-keyword-face
+             font-lock-string-face
+             font-lock-type-face
+             font-lock-variable-name-face
+             font-lock-warning-face)
+           "Faces to override with perfect-palette colors.")
+
+         (defvar perfect-palette-override--saved nil
+           "Saved face specs before overriding.")
+
+         (defun perfect-palette-override--apply (palette)
+           "Override font-lock faces with generated PALETTE from `perfect-palette'."
+           (setq perfect-palette-override--saved nil)
+           (cl-loop for face in perfect-palette-override--faces
+                    for col in palette
+                    do (push (list face (face-attribute face :foreground nil 'default)) perfect-palette-override--saved)
+                    do (set-face-foreground face col)))
+
+         (defun perfect-palette-override-enable
+             (&optional p q hue-start s l luv)
+           "Enable perfect-palette based face override for font-lock faces."
+           (interactive)
+           (let* ((p (or p 9))
+                  (q (or q 4))
+                  (hue-start (or hue-start 0.58))
+                  (s (or s 45))
+                  (l (or l 65))
+                  (luv (or luv t))
+                  (palette (perfect-palette p q hue-start s l luv)))
+             (perfect-palette-override--apply
+              ;; 颜色数量可能比 faces 少/多，补齐或截断
+              (cl-subseq (append palette (make-list (length perfect-palette-override--faces) "#81a1c1"))
+                         0 (length perfect-palette-override--faces)))))
+
+         (defun perfect-palette-override-disable ()
+           "Restore original font-lock face colors."
+           (interactive)
+           (when perfect-palette-override--saved
+             (dolist (elem perfect-palette-override--saved)
+               (let ((face (nth 0 elem))
+                     (color (nth 1 elem)))
+                 (set-face-foreground face color)))
+             (setq perfect-palette-override--saved nil))))
+
+  (:hooks prog-mode-hook perfect-palette-override-enable))
+
+(setup (:elpaca apheleia)
+  (:require apheleia)
+  (:init (add-to-list 'apheleia-mode-alist '(sh-mode . shfmt))
+         (add-to-list 'apheleia-mode-alist '(cuda-mode . clang-format))
+         (add-to-list 'apheleia-mode-alist '(cuda-ts-mode . clang-format))
+         (add-to-list 'apheleia-mode-alist '(protobuf-mode . clang-format))
+
+         (add-to-list 'apheleia-formatters-mode-extension-assoc '(cuda-mode . ".cu"))
+         (add-to-list 'apheleia-formatters-mode-extension-assoc '(cuda-ts-mode . ".cu"))
+         (add-to-list 'apheleia-formatters-mode-extension-assoc '(glsl-ts-mode . ".glsl"))
+         (add-to-list 'apheleia-formatters-mode-extension-assoc '(protobuf-mode . ".proto"))
+
+         ;; Apheleia's default clang-format config doesn't respect `c-basic-offset', so
+         ;; force it to in the absence of a .clang-format file.
+         (setf (alist-get 'clang-format apheleia-formatters)
+               `("clang-format"
+                 "-assume-filename"
+                 (or (apheleia-formatters-local-buffer-file-name)
+                     (apheleia-formatters-mode-extension)
+                     ".c")
+                 (when apheleia-formatters-respect-indent-level
+                   (unless (locate-dominating-file default-directory ".clang-format")
+                     (format "--style={IndentWidth: %d}" c-basic-offset)))))
+
+         ;; Apheleia's default config for prettier passes an explicit --tab-width N to
+         ;; all prettier formatters, respecting your indent settings in Emacs, but
+         ;; overriding any indent settings in your prettier config files. This changes
+         ;; it to omit indent switches if any configuration for prettier is present in
+         ;; the current project.
+         (dolist (formatter '(prettier prettier-css prettier-html prettier-javascript
+                                       prettier-json prettier-scss prettier-svelte
+                                       prettier-typescript prettier-yaml))
+           (setf (alist-get formatter apheleia-formatters)
+                 (append (delete '(apheleia-formatters-js-indent "--use-tabs" "--tab-width")
+                                 (alist-get formatter apheleia-formatters))
+                         '((when apheleia-formatters-respect-indent-level
+                             (unless (or (cl-loop for file
+                                                  in '(".prettierrc"
+                                                       ".prettierrc.json"
+                                                       ".prettierrc.yml"
+                                                       ".prettierrc.yaml"
+                                                       ".prettierrc.json5"
+                                                       ".prettierrc.js" "prettier.config.js"
+                                                       ".prettierrc.mjs" "prettier.config.mjs"
+                                                       ".prettierrc.cjs" "prettier.config.cjs"
+                                                       ".prettierrc.toml")
+                                                  if (locate-dominating-file default-directory file)
+                                                  return t)
+                                         (when-let ((pkg (locate-dominating-file default-directory "package.json")))
+                                           (require 'json)
+                                           (let ((json-key-type 'alist))
+                                             (assq 'prettier
+                                                   (json-read-file (expand-file-name "package.json" pkg))))))
+                               (apheleia-formatters-indent "--use-tabs" "--tab-width")))))))))
