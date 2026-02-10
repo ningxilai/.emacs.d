@@ -6,7 +6,7 @@
 
 (setup (:elpaca latex-change-env))
 
-(setup LaTeX-mode (:elpaca auctex)
+(setup LaTeX-mode (:elpaca auctex :host github :repo "emacs-straight/auctex" :branch "master")
        (:option TeX-PDF-mode t
                 TeX-view-program-list '(("PDF Tools" TeX-pdf-tools-sync-view))
                 TeX-view-program-selection '((output-pdf "PDF Tools"))
@@ -46,10 +46,10 @@
                                             (visual-line-mode)
                                             (auto-fill-mode))))
 
-       (:with-map latex-mode-map (:local "C-c r" latex-change-env))
+       (:with-map latex-mode-map (:bind "C-c r" latex-change-env))
 
-       (:with-map latex-mode-map (:local "C-c C-g" pdf-sync-forward-search))
-       
+       (:with-map latex-mode-map (:bind "C-c C-g" pdf-sync-forward-search))
+
        (defun move-line-region-down (arg)
          "Move region (transient-mark-mode active) or current line
          arg lines down."

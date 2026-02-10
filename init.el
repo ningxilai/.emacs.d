@@ -54,140 +54,14 @@
 
     )
 
-  ;; -setup - aka elpaca-setup
-
-  (defmacro elpaca-setup (order &rest body)
-    "Execute BODY in `setup' declaration after ORDER is finished.
-If the :disabled keyword is present in body, the package is completely ignored.
-This happens regardless of the value associated with :disabled.
-The expansion is a string indicating the package has been disabled."
-    (declare (indent 1))
-    (if (memq :disabled body)
-        (format "%S :disabled by elpaca-setup" order)
-      (let ((o order))
-        (when-let* ((ensure (cl-position :ensure body)))
-          (setq o (if (null (nth (1+ ensure) body)) nil order)
-                body (append (cl-subseq body 0 ensure)
-                             (cl-subseq body (+ ensure 2)))))
-        `(elpaca ,o (setup
-                        ,(if-let* (((memq (car-safe order) '(quote \`)))
-                                   (feature (flatten-tree order)))
-                             (cadr feature)
-                           (elpaca--first order))
-                      ,@body)))))
-
-  (elpaca setup (require 'setup))
-
-  (elpaca-wait)
-
-  (defun setup-wrap-to-install-package (body _name)
-    "Wrap BODY in an `elpaca' block if necessary.
-The body is wrapped in an `elpaca' block if `setup-attributes'
-contains an alist with the key `elpaca'."
-    (if (assq 'elpaca setup-attributes)
-        `(elpaca ,(cdr (assq 'elpaca setup-attributes)) ,@(macroexp-unprogn body))
-      body))
-  ;; Add the wrapper function
-  (add-to-list 'setup-modifier-list #'setup-wrap-to-install-package)
-
-  (setup-define :elpaca
-    (lambda (order &rest recipe)
-      (push (cond
-             ((eq order t) `(elpaca . ,(setup-get 'feature)))
-             ((eq order nil) '(elpaca . nil))
-             (`(elpaca . (,order ,@recipe))))
-            setup-attributes)
-      ;; If the macro wouldn't return nil, it would try to insert the result of
-      ;; `push' which is the new value of the modified list. As this value usually
-      ;; cannot be evaluated, it is better to return nil which the byte compiler
-      ;; would optimize away anyway.
-      nil)
-    :documentation "Install ORDER with `elpaca'.
-The ORDER can be used to deduce the feature context."
-    :shorthand #'cadr)
-
-  (setup-define :custom
-    (setup-make-setter
-     (lambda (name)
-       `(funcall (or (get ',name 'custom-get)
-                     #'symbol-value)
-                 ',name))
-     (lambda (name val)
-       `(progn
-          (custom-load-symbol ',name)
-          (funcall (or (get ',name 'custom-set) #'set-default)
-                   ',name ,val))))
-
-    :documentation "Like default `:option', but set variables after the feature is loaded."
-    :debug '(sexp form)
-    :repeatable t
-    :after-loaded t)
-
-  ;;  src: https://emacs.nasy.moe/#Setup-EL
-  (setup-define :autoload
-    (lambda (func)
-      (let ((fn (if (memq (car-safe func) '(quote function))
-                    (cadr func)
-                  func)))
-        `(unless (fboundp (quote ,fn))
-           (autoload (function ,fn) ,(symbol-name (setup-get 'feature)) nil t))))
-    :documentation "Autoload COMMAND if not already bound."
-    :repeatable t
-    :signature '(FUNC ...))
-
-  (setup-define :hooks
-    (lambda (hook func)
-      `(add-hook ',hook #',func))
-    :documentation "Add pairs of hooks."
-    :repeatable t)
-
-  (setup-define :local
-    (lambda (key command)
-      `(keymap-set ,(setup-get 'map) ,key (function ,command)))
-    :repeatable t
-    :after-loaded t
-    :documentation "Use `keymap-set' to define keybindings.")
-
-  (setup-define :global*
-    (lambda (key command) `(keymap-global-set ,key (function ,command)))
-    :repeatable t
-    :documentation "Use `keymap-global-set' to define global keybindings.")
-
-  (setup-define :init
-    (lambda (&rest body) (macroexp-progn body))
-    :documentation "Init keywords like use-package and leaf.")
-
-  (setup-define :advice
-    (lambda (symbol where function)
-      `(advice-add ',symbol ,where ,function))
-    :documentation "Add a piece of advice on a function.
- See `advice-add' for more details."
-    :after-loaded t
-    :debug '(sexp sexp function-form)
-    :ensure '(nil nil func)
-    :repeatable t)
-
-  (setup-define :silence
-    (lambda (&rest body)
-      (cl-letf (((symbol-function 'message) (function format)))
-        ,(macroexp-progn body)))
-    :debug '(setup)
-    :documentation "Evaluate BODY but keep the echo era clean.")
-
-  (setup-define :delay
-    (lambda (time &rest body)
-      `(run-with-idle-timer ,time nil (lambda nil ,@body)))
-    :indent 1
-    :documentation "Delay loading BODY until a certain amount of idle time has passed.")
-
-;;; warning
-
   (dolist (dir '("lisp" "site-lisp"))
     (push (expand-file-name dir user-emacs-directory) load-path))
 
+  (require 'setup)
   (require 'setup-load)
 
   )
+
 
 (setup (:elpaca gcmh)
   (:hooks elpaca-after-init-hook gcmh-mode)
@@ -623,22 +497,25 @@ The ORDER can be used to deduce the feature context."
 (setup (:elpaca region-occurrences-highlighter)
   (:hooks prog-mode-hook region-occurrences-highlighter-mode
           text-mode-hook region-occurrences-highlighter-mode)
-  (:with-map prog-mode-map (:local "M-n" region-occurrences-highlighter-next
-                                   "M-p" region-occurrences-highlighter-prev)))
+  (:with-map prog-mode-map (:bind "M-n" region-occurrences-highlighter-next
+                                  "M-p" region-occurrences-highlighter-prev)))
 
 (setup whitespace
   (whitespace-mode +1)
   (:init
    (setq-default which-func-update-delay 0.2
                  show-trailing-whitespace nil))
-  (:option
-   whitespace-line-column nil
-   whitespace-style '(faces tab-mark missing-newline-at-eof)
-   whitespace-display-mappings `((tab-mark ?\t [,(make-glyph-code ?» 'whitespace-tab) ?\t] )))
+  (:option whitespace-line-column nil)
   (:custom indicate-empty-lines nil
-           whitespace-style '(face
-                              trailing space-before-tab
-                              indentation empty space-after-tab))
+           whitespace-style '(faces
+                              tab-mark
+                              missing-newline-at-eof
+                              trailing
+                              space-before-tab
+                              indentation
+                              empty
+                              space-after-tab))
+  (:custom-face whitespace-display-mappings `((tab-mark ?\t [,(make-glyph-code ?» 'whitespace-tab) ?\t] )))
   (:hooks before-save-hook delete-trailing-whitespace-mode
           prog-mode-hook (lambda () (setq-local show-trailing-whitespace t))))
 
@@ -1131,19 +1008,19 @@ The ORDER can be used to deduce the feature context."
          [remap describe-variable] helpful-variable
          [remap describe-key] helpful-key
          [remap describe-symbol] helpful-symbol)
-  (:with-map emacs-lisp-mode-map (:local "C-c C-d" helpful-at-point))
-  (:with-map lisp-interaction-mode-map (:local"C-c C-d" helpful-at-point))
-  (:with-map help-mode-map (:local "r" remove-hook-at-point))
+  (:with-map emacs-lisp-mode-map (:bind "C-c C-d" helpful-at-point))
+  (:with-map lisp-interaction-mode-map (:bind "C-c C-d" helpful-at-point))
+  (:with-map help-mode-map (:bind "r" remove-hook-at-point))
   (:hooks helpful-mode-hook cursor-sensor-mode))
 
 (setup which-key
   (which-key-mode +1)
-  (:option which-key-lighter nil
+  (:option which-key-lighter " WK"
            which-key-sort-order 'which-key-description-order
            which-key-separator " "
            which-key-prefix-prefix "… "
            which-key-max-display-columns 3
-           which-key-idle-delay 3
+           which-key-idle-delay 3.0
            which-key-idle-secondary-delay 0.25
            which-key-add-column-padding 1
            which-key-max-description-length 40))
@@ -1250,36 +1127,34 @@ The ORDER can be used to deduce the feature context."
                                         (add-to-list 'consult-buffer-sources 'compleseus--source-window-buffers)
                                         (add-to-list 'consult-buffer-sources 'compleseus--source-workspace-buffers))))
 
-  (:global* "C-c h" consult-history
-            "C-c m" consult-mode-command
-            "C-c b"  consult-bookmark
-            "C-c k"  consult-kmacro
-            "C-x b"  consult-buffer
-            "M-#"  consult-register-load
-            "M-'"  consult-register-store
-            "C-M-#"  consult-register
-            "M-y"  consult-yank-pop
-            "M-g e"  consult-compile-error
-            "M-g f"  consult-flymake
-            "M-g g"  consult-goto-line
-            "M-g M-g" consult-goto-line
-            "M-g o"  consult-outline
-            "M-g m"  consult-mark
-            "M-g k"  consult-global-mark
-            "M-g i"  consult-imenu
-            "M-g I"  consult-imenu-multi
-            "M-s f"  consult-find
-            "M-s L"  consult-locate
-            "M-s g"  consult-grep
-            "M-s G"  consult-git-grep
-            "M-s r"  consult-ripgrep
-            "M-s k"  consult-keep-lines
-            "M-s u"  consult-focus-lines)
+  (:global "C-c h" consult-history
+           "C-c m" consult-mode-command
+           "C-c b"  consult-bookmark
+           "C-c k"  consult-kmacro
+           "C-x b"  consult-buffer
+           "M-#"  consult-register-load
+           "M-'"  consult-register-store
+           "C-M-#"  consult-register
+           "M-y"  consult-yank-pop
+           "M-g e"  consult-compile-error
+           "M-g f"  consult-flymake
+           "M-g g"  consult-goto-line
+           "M-g M-g" consult-goto-line
+           "M-g o"  consult-outline
+           "M-g m"  consult-mark
+           "M-g k"  consult-global-mark
+           "M-g i"  consult-imenu
+           "M-g I"  consult-imenu-multi
+           "M-s f"  consult-find
+           "M-s L"  consult-locate
+           "M-s g"  consult-grep
+           "M-s G"  consult-git-grep
+           "M-s r"  consult-ripgrep
+           "M-s k"  consult-keep-lines
+           "M-s u"  consult-focus-lines)
 
-  (:global* "M-s e"  consult-isearch-history
-            "C-s"  consult-line)
-
-  )
+  (:global "M-s e"  consult-isearch-history
+           "C-s"  consult-line))
 
 (setup icomplete-mode
   (:option tab-always-indent 'complete
@@ -1319,9 +1194,9 @@ The ORDER can be used to deduce the feature context."
                  nil
                  (window-parameters (mode-line-format . none))))
 
-  (:global* "C-." embark-act
-            "C-;" embark-dwim
-            "C-h B" embark-bindings))
+  (:global "C-." embark-act
+           "C-;" embark-dwim
+           "C-h B" embark-bindings))
 
 (setup (:elpaca embark-consult)
   (:hooks embark-collect-mode-hook consult-preview-at-point-mode))
@@ -1480,8 +1355,17 @@ The ORDER can be used to deduce the feature context."
 
 (setup treesit
 
-  (setopt treesit-enabled-modes t
-          treesit-font-lock-level 4)
+  (:option treesit-enabled-modes t
+           treesit-font-lock-level 4
+           treesit--font-lock-verbose nil
+
+           treesit--indent-verbose t
+
+           toml-ts-mode-indent-offset 4
+           rust-ts-mode-indent-offset 4
+           cmake-ts-mode-indent-offset 4
+           json-ts-mode-indent-offset 4
+           go-ts-mode-indent-offset 4)
 
   (save-match-data
     (dolist (sym '(auto-mode-alist interpreter-mode-alist))
@@ -1490,7 +1374,7 @@ The ORDER can be used to deduce the feature context."
                                     (string-match "-ts-mode\\(?:-maybe\\)?$" (symbol-name fn)))
                         collect (cons src fn)))))
 
-  (:option treesit-language-source-alist
+  (:custom treesit-language-source-alist
            '((awk . ("https://github.com/Beaglefoot/tree-sitter-awk.git"))
              (bash       . ("https://github.com/tree-sitter/tree-sitter-bash.git"))
              (bibtex . ("https://github.com/latex-lsp/tree-sitter-bibtex.git"))
@@ -1553,16 +1437,7 @@ The ORDER can be used to deduce the feature context."
              (python-mode     . python-ts-mode)
              (ruby-mode       . ruby-ts-mode)
              (sh-mode         . bash-ts-mode)
-             (typescript-mode . typescript-ts-mode))
-
-           toml-ts-mode-indent-offset 4
-           rust-ts-mode-indent-offset 4
-           cmake-ts-mode-indent-offset 4
-           json-ts-mode-indent-offset 4
-           go-ts-mode-indent-offset 4)
-
-  (:custom treesit--indent-verbose t
-           treesit--font-lock-verbose nil))
+             (typescript-mode . typescript-ts-mode))))
 
 (setup (:elpaca hsluv)
   (:require color)
@@ -1693,3 +1568,7 @@ The ORDER can be used to deduce the feature context."
                                              (assq 'prettier
                                                    (json-read-file (expand-file-name "package.json" pkg))))))
                                (apheleia-formatters-indent "--use-tabs" "--tab-width")))))))))
+
+(setup module
+  (:load lang-markdown lang-haskell lang-org lang-web :dirs ("site-lisp/lang/"))
+  (:load tool-eww tool-reader :dirs ("site-lisp/tool/")))

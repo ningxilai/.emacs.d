@@ -8,7 +8,7 @@
 
 (setup epub-mode (:elpaca epub :host github :repo "PeteLeng/epub-mode")
        (:require exml-query epub)
-       (:mode ".*\\.epub"))
+       (add-to-list 'auto-mode-alist '(".*\\.epub" . epub-mode)))
 
 (provide 'tool-reader)
 ;; ends here.

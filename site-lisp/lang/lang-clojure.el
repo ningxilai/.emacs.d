@@ -53,6 +53,8 @@
   (:hooks clojure-mode-hook clj-refactor-mode
           clojure-ts-mode-hook clj-refactor-mode))
 
+(setup (:elpaca hydra))
+
 (setup (:elpaca sesman))
 (setup (:elpaca spinner))
 (setup (:elpaca queue))
