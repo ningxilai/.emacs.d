@@ -5,9 +5,22 @@
 ;; Web
 
 (setup (:elpaca web-mode)
+  (:mode "\\.[px]?html?\\'"
+         "\\.\\(?:tpl\\|blade\\)\\(?:\\.php\\)?\\'"
+         "\\.erb\\'"
+         "\\.[lh]?eex\\'"
+         "\\.jsp\\'"
+         "\\.as[cp]x\\'"
+         "\\.ejs\\'"
+         "\\.hbs\\'"
+         "\\.mustache\\'"
+         "\\.svelte\\'"
+         "\\.twig\\'"
+         "\\.jinja2?\\'"
+         "\\.eco\\'"
+         "wp-content/themes/.+/.+\\.php\\'"
+         "templates/.+\\.php\\'")
   (:require web-mode)
-  (add-to-list 'auto-mode-alist '(".*\\.htm$" . web-mode))
-  (add-to-list 'auto-mode-alist '(".*\\.css" . web-mode))
   (:init (dolist (alist web-mode-engines-auto-pairs)
            (setcdr alist
                    (cl-loop for pair in (cdr alist)

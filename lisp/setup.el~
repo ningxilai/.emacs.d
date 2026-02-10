@@ -555,20 +555,10 @@ The first FEATURE can be used to deduce the feature context."
 
 (setup-define :global
   (lambda (key command)
-    (if (vectorp key)
-        ;; For vector keys like [remap ...], use global-set-key
-        `(global-set-key ,key ,command)
-      `(keymap-global-set ,key ,command)))
+    `(keymap-global-set ,key ,command))
   :documentation "Use `keymap-global-set' to define global keybindings."
   :ensure '(nil func)
   :repeatable t)
-
-;; (setup-define :global
-;;   (lambda (key command)
-;;     `(keymap-global-set ,key ,command))
-;;   :documentation "Use `keymap-global-set' to define global keybindings."
-;;   :ensure '(nil func)
-;;   :repeatable t)
 
 (setup-define :bind
   (lambda (key command)
@@ -629,15 +619,6 @@ The arguments REST are handled as by `:bind'."
 (setup-define :bind-to
   (lambda (binding)
     `(keymap-global-set ,binding #',(setup-get 'func)))
-  :documentation "Bind current function to KEY globally."
-  :repeatable t)
-
-(setup-define :bind-to
-  (lambda (binding)
-    (if (vectorp binding)
-        ;; For vector keys like [remap ...], use global-set-key
-        `(global-set-key ,binding #',(setup-get 'func))
-      `(keymap-global-set ,binding #',(setup-get 'func))))
   :documentation "Bind current function to KEY globally."
   :repeatable t)
 
