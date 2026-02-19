@@ -2,10 +2,12 @@
 使用`setup.el`重构的轻量化配置，使用`lsp-mode`与`corfu`进行编程行为。
 
 ### `module`
-对具体的不同语言的支持存放在`site-lisp`目录下，包括两类自然语言（汉语与希腊语），与多种编程语言。
+对具体的不同语言的支持存放在`site-lisp/lang`目录下，包括两类自然语言（汉语与希腊语），与多种编程语言。
+
+对其他工具的扩展存放在`site-lisp/tool`目录下，关于`eww` `hyperbole` `reader`。
 
 ### `lisp`
-此目录下存放着对于`setup.el`的扩展，以便于管理`module`。
+此目录下存放着`setup.el`以及`setup.el`的扩展，以便于管理配置代码段和`module`。
 
 ### `user-lisp`
 目前尚未确定是否将其纳入稳定标准当中，对其行为的配置仍属待定。

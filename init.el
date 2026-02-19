@@ -284,8 +284,8 @@
            ;; Only show file encoding if it's non-UTF-8 and different line endings
            ;; than the current OSes preference
            doom-modeline-buffer-encoding 'nondefault
-           doom-modeline-default-eol-type (if (featurep :system 'windows) 1 0))
-  )
+           doom-modeline-default-eol-type (if (featurep :system 'windows) 1 0)))
+
 
 (setup (:elpaca enlight)
 
@@ -347,6 +347,12 @@
                                      (?\「. ?\」)
                                      (?\< . ?\>)
                                      (?\【. ?\】))))
+
+(setup (:elpaca parinfer-rust-mode)
+  (:custom parinfer-rust-auto-download t
+           parinfer-rust-library-directory (expand-file-name (file-name-as-directory "modules/parinfer-rust")
+                                                             user-emacs-directory))
+  (:hook emacs-lisp-mode clojure-mode scheme-mode common-lisp-mode))
 
 (setup (:elpaca smartparens)
   (:require smartparens-config)
@@ -697,11 +703,11 @@
   (set-display-table-slot standard-display-table 'wrap (make-glyph-code ?–))
 
   (add-hook 'emacs-startup-hook
-            #'(lambda()(with-no-warnings
-                    (setopt ;; window.el config
-                     split-height-threshold 80
-                     split-width-threshold 120
-                     pop-up-windows nil))))
+            #'(lambda()(with-no-warnings)
+                (setopt ;; window.el config
+                 split-height-threshold 80
+                 split-width-threshold 120
+                 pop-up-windows nil)))
 
   (add-hook 'after-init-hook
             #'(lambda () (progn (defface nano-default '((t)) "")   (defface nano-default-i '((t)) "")
@@ -775,9 +781,9 @@
 
   (setopt enable-recursive-minibuffers t)
 
-  (setopt window-resize-pixelwise t)
+  (setopt window-resize-pixelwise t))
 
-  )
+
 
 
 (setup feature
@@ -791,8 +797,8 @@
 
   (:custom global-text-scale-adjust-resizes-frames nil ;; face-remap
            custom-buffer-done-kill t ;; cus-edit
-           tramp-backup-directory-alist backup-directory-alist ;; Tramp
-           )
+           tramp-backup-directory-alist backup-directory-alist) ;; Tramp
+
 
   (:hooks emacs-startup-hook (lambda () (setopt kill-buffer-delete-auto-save-files t
                                            word-wrap t
@@ -841,9 +847,9 @@
                                            ;; isearch
                                            read-file-name-completion-ignore-case t
                                            ;; minibuffer
-                                           auto-save-list-file-prefix (file-name-concat user-emacs-directory "var/auto-save-list/.saves-")
-                                           ;; startup
-                                           )))
+                                           auto-save-list-file-prefix (file-name-concat user-emacs-directory "var/auto-save-list/.saves-"))))
+  ;; startup
+
 
   (setq-default custom-file (expand-file-name "custom.el" user-emacs-directory))
   (load custom-file :no-error-if-file-is-missing)
@@ -924,9 +930,9 @@
         (delete-frame)
       (error (save-buffers-kill-terminal))))
 
-  (global-set-key (kbd "C-x C-c") 'nano-kill)
+  (global-set-key (kbd "C-x C-c") 'nano-kill))
 
-  )
+
 
 (setup files
   (auto-save-visited-mode +1)
@@ -1275,6 +1281,25 @@
   (:global "M-s e"  consult-isearch-history
            "C-s"  consult-line))
 
+(setup (:elpaca consult-dir)
+  (:require consult-dir)
+  (:init
+   ;; Zoxide
+   (setq consult-dir-default-command #'consult-dir-dired)
+   (defun consult-dir--zoxide-dirs ()
+     "Return list of zoxide dirs."
+     (split-string (shell-command-to-string "zoxide query -l") "\n" t))
+   (defvar consult-dir--source-zoxide
+     `(:name "zoxide"
+             :narrow ?z
+             :category file
+             :face consult-file
+             :history file-name-history
+             :enabled ,(lambda () (executable-find "zoxide"))
+             :items ,#'consult-dir--zoxide-dirs)
+     "zoxide directory source for `consult-dir'.")
+   (add-to-list 'consult-dir-sources 'consult-dir--source-zoxide t)))
+
 (setup icomplete-mode
   (:option tab-always-indent 'complete
            icomplete-delay-completions-threshold 0
@@ -1398,8 +1423,7 @@
   (setq vterm-set-title-functions 'vterm-set-title-functions)
   (:hooks shell-mode-hook ansi-color-for-comint-mode-on))
 
-(setup (:elpaca multi-vterm)
-  (:option vterm-shell 'zsh))
+(setup (:elpaca multi-vterm))
 
 (setup (:elpaca vterm-toggle)
   (add-to-list 'display-buffer-alist
@@ -1450,12 +1474,18 @@
   (:option projectile-project-root-files '()
            projectile-project-root-files-top-down-recurring '("Makefile")))
 
+(setup (:elpaca majutsu :host github :repo "0WD0/majutsu"))
+
 (setup (:elpaca lsp-mode)
-  (setq lsp-completion-provider :none)
+  (:option lsp-completion-provider :none
+           flymake-show-diagnostics-at-end-of-line 'fancy)
+
   (defun lsp-mode-setup-completion ()
     (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
           '(flex))) ;; Configure flex
-  (:hooks lsp-completion-mode-hook lsp-mode-setup-completion))
+
+  (:hooks lsp-mode-hook flymake-mode
+          lsp-completion-mode-hook lsp-mode-setup-completion))
 
 (setup (:elpaca lsp-ui)
   (:init (setq lsp-ui-sideline-show-diagnostics nil
@@ -1689,5 +1719,5 @@
                                (apheleia-formatters-indent "--use-tabs" "--tab-width")))))))))
 
 (setup module
-  (:load lang-markdown lang-haskell lang-org lang-web :dirs ("site-lisp/lang/"))
-  (:load tool-eww tool-reader :dirs ("site-lisp/tool/")))
+  (:load lang-markdown lang-haskell lang-racket lang-chinese lang-web :dirs ("site-lisp/lang/"))
+  (:load tool-eww tool-pollen :dirs ("site-lisp/tool/")))
