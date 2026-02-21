@@ -1,11 +1,11 @@
 ;; -*- lexical-binding: t; -*-
 
-;;; Racket
+;;; Racket & Pollen
 
 (setup (:elpaca racket-mode)
   (:mode "\\.rkt\\'" "\\.scrbl\\'"  "\\.rhm\\'")
-  (:load tool-pollen :dirs ("site-lisp/tool/"))
-  (:require tool-pollen)
+  (:load pollen-mode :dirs ("site-lisp/lang/"))
+  (:require pollen-mode)
   (:mode ("\\.html.pm" . racket-mode))
   (:hooks racket-mode-hook pollen-enable-if-pollen-file))
 

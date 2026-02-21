@@ -1,4 +1,4 @@
-;;; Commentary:  -*- lexical-binding: t; -*-
+;;;  -*- lexical-binding: t; -*-
 
 ;;; Code:
 

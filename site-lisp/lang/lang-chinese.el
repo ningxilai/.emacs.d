@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 
-;;; Rime/GT/fanyi
+;;; Rime
 
 (setup (:elpaca rime :host github :repo "DogLooksGood/emacs-rime")
   (:option default-input-method "rime"
@@ -33,23 +33,6 @@
                          (set-cursor-color (if current-input-method
                                                input-method-cursor-color
                                              default-cursor-color)))))))
-
-(setup (:elpaca fanyi)
-  (:custom fanyi-providers '(;; 海词
-                             fanyi-haici-provider
-                             ;; 有道同义词词典
-                             fanyi-youdao-thesaurus-provider
-                             ;; Etymonline
-                             fanyi-etymon-provider
-                             ;; Longman
-                             fanyi-longman-provider
-                             ;; English-English dictionary
-                             fanyi-etymon-provider
-                             fanyi-longman-provider)))
-
-(setup (:elpaca gt :host github :repo "lorniu/gt.el")
-  (:custom gt-langs '(en zh)
-           gt-default-translator '(gt-translator :engines (gt-youdao-dict-engine))))
 
 (provide 'lang-chinese)
 ;;; lang-chinese.el ends here

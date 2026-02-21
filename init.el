@@ -1719,5 +1719,5 @@
                                (apheleia-formatters-indent "--use-tabs" "--tab-width")))))))))
 
 (setup module
-  (:load lang-markdown lang-haskell lang-racket lang-chinese lang-web :dirs ("site-lisp/lang/"))
-  (:load tool-eww tool-pollen :dirs ("site-lisp/tool/")))
+  (:load lang-markdown lang-haskell lang-racket lang-chinese lang-web lang-org :dirs ("site-lisp/lang/"))
+  (:load tool-eww :dirs ("site-lisp/tool/")))
