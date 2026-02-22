@@ -1,0 +1,196 @@
+;;;   -*- lexical-binding: t; -*-
+
+;;; Code:
+
+;; shr.el
+
+(setup (:elpaca ekp :host github :repo "Kinneyzhang/emacs-kp" :file (:default "*.el" "dictionaries"))
+  (:require ekp-utils ekp-hyphen ekp)
+  (ekp-c-module-load)
+  (:custom ekp-latin-lang "en_US")
+  (:option ekp-line-penalty 10
+           ekp-hyphen-penalty 50
+           ekp-adjacent-fitness-penalty 100
+
+           ;; pixels
+
+           ekp-lws-ideal-pixel 8
+           ekp-lws-stretch-pixel 4
+           ekp-lws-shrink-pixel 3
+
+           ekp-mws-ideal-pixel 7
+           ekp-mws-stretch-pixel 3
+           ekp-mws-shrink-pixel 2
+
+           ekp-cws-ideal-pixel 0
+           ekp-cws-stretch-pixel 2
+           ekp-cws-shrink-pixel 0)
+
+  (:load eww-kp-direct :dirs ("site-lisp/tool/eww-kp-direct"))
+  (:require eww-kp-direct)
+  (:init
+   ;; Enable KP algorithm for EWW
+   (setopt eww-kp-use-kp t
+           eww-kp-line-width 65)))
+
+(setup (:elpaca nov)
+
+  (:mode ".*\\.epub")
+
+  (:with-hook nov-mode-hook (:hook eldoc-mode
+                                   eldoc-box-hover-mode))
+
+  (defun shrface-nov-setup ()
+    (unless shrface-toggle-bullets
+      (shrface-regexp))
+    (set-visited-file-name nil t)
+    (setq-local tab-width 8)
+    (if (string-equal system-type "android")
+        (setq-local touch-screen-enable-hscroll nil)))
+
+  (defun shrface-nov-apply-font ()
+    (face-remap-add-relative 'default '(:family "LXGW WenKai" :height 160)))
+
+  (add-hook 'nov-mode-hook #'shrface-nov-setup)
+  (add-hook 'nov-mode-hook #'shrface-nov-apply-font)
+
+  (:require shrface)
+
+  (defun shrface-nov-render-html ()
+    (require 'eww)
+    (let ((shrface-org nil)
+          (shr-bullet (concat (char-to-string shrface-item-bullet) " "))
+          (shr-table-vertical-line "|")
+          (shr-width 7000) ;; make it large enough, it would not fill the column (use visual-line-mode/writeroom-mode instead)
+          (shr-indentation 0) ;; remove all unnecessary indentation
+          (tab-width 8)
+          (shr-external-rendering-functions shrface-nov-rendering-functions)
+          (shrface-toggle-bullets nil)
+          (shrface-href-versatile t)
+          (shr-use-fonts nil)           ; nil to use default font
+          (shr-map nov-mode-map))
+
+      ;; HACK: `shr-external-rendering-functions' doesn't cover
+      ;; every usage of `shr-tag-img'
+      (cl-letf (((symbol-function 'shr-tag-img) 'nov-render-img))
+        (shr-render-region (point-min) (point-max)))
+      ))
+
+  (setq nov-render-html-function #'shrface-nov-render-html)
+
+  (defun shrface-remove-blank-lines-at-the-end (start end)
+    "A fix for `shr--remove-blank-lines-at-the-end' which will remove image at the end of the document."
+    (save-restriction
+      (save-excursion
+        (narrow-to-region start end)
+        (goto-char end)
+        (when (and (re-search-backward "[^ \n]" nil t)
+                   (not (eobp)))
+          (forward-line 1)
+          (delete-region (point) (min (1+ (point)) (point-max)))))))
+
+  (advice-add 'shr--remove-blank-lines-at-the-end :override #'shrface-remove-blank-lines-at-the-end))
+
+(setup shr
+  (:option shr-cookie-policy nil))
+
+(setup (:elpaca shrface :host github :repo "chenyanming/shrface")
+  (:require shrface)
+  (:init (defvar shrface-nov-rendering-functions
+           (append '((img . nov-render-img)
+                     (svg . nov-render-svg)
+                     (title . nov-render-title)
+                     (pre . shrface-shr-tag-pre-highlight)
+                     (code . shrface-tag-code)
+                     (form . eww-tag-form)
+                     (input . eww-tag-input)
+                     (button . eww-form-submit)
+                     (textarea . eww-tag-textarea)
+                     (select . eww-tag-select)
+                     (link . eww-tag-link)
+                     (meta . eww-tag-meta))
+                   shrface-supported-faces-alist))
+         (add-hook 'outline-view-change-hook 'shrface-outline-visibility-changed)
+         (defun shrface-shr-tag-pre-highlight (pre)
+           "Highlighting code in PRE."
+           (let* ((shr-folding-mode 'none)
+                  (shr-current-font 'default)
+                  (code (with-temp-buffer
+                          (shr-generic pre)
+                          ;; (indent-rigidly (point-min) (point-max) 2)
+                          (buffer-string)))
+                  (lang (or (shr-tag-pre-highlight-guess-language-attr pre)
+                            (let ((sym (language-detection-string code)))
+                              (and sym (symbol-name sym)))))
+                  (mode (and lang
+                             (shr-tag-pre-highlight--get-lang-mode lang))))
+             (shr-ensure-newline)
+             (shr-ensure-newline)
+             (setq start (point))
+             (insert
+              ;; (propertize (concat "#+BEGIN_SRC " lang "\n") 'face 'org-block-begin-line)
+              (or (and (fboundp mode)
+                       (with-demoted-errors "Error while fontifying: %S"
+                         (shr-tag-pre-highlight-fontify code mode)))
+                  code)
+              ;; (propertize "#+END_SRC" 'face 'org-block-end-line )
+              )
+             (shr-ensure-newline)
+             (setq end (point))
+             (pcase (frame-parameter nil 'background-mode)
+               ('light
+                (add-face-text-property start end '(:background "#D8DEE9" :extend t)))
+               ('dark
+                (add-face-text-property start end '(:background "#292b2e" :extend t))))
+             (shr-ensure-newline)
+             (insert "\n")))
+
+         (with-eval-after-load 'shrface
+           (defvar org-element--cache nil)
+           (defvar org-element--cache-sync-requests nil)
+           (defvar org-element--cache-active-p (lambda () nil))
+           (defvar org-element--request-beg #'car)
+           (advice-add 'org-element-at-point :around
+                       (defun shrface--suppress-org-element-warning (oldfun &rest args)
+                         (cl-letf (((symbol-function 'derived-mode-p)
+                                    (lambda (&rest modes)
+                                      (or (memq 'org-mode modes)
+                                          (apply #'derived-mode-p modes)))))
+                           (apply oldfun args))))
+           (add-hook 'nov-mode-hook #'(lambda () (org-indent-mode))))
+
+         )
+  (:custom shrface-bullets-bullet-list '("▼" "▽" "▿" "▾")))
+
+(setup (:elpaca shr-tag-pre-highlight :host github :repo "xuchunyang/shr-tag-pre-highlight.el")
+  (:require shr-tag-pre-highlight)
+  (:init (add-to-list 'shr-external-rendering-functions
+                      '(pre . shr-tag-pre-highlight))
+         (with-eval-after-load 'eww
+           (advice-add 'eww-display-html :around
+                       'eww-display-html--override-shr-external-rendering-functions)))
+  (:custom shr-tag-pre-highlight-lang-modes
+           '(("ocaml" . tuareg)
+             ("elisp" . emacs-lisp)
+             ("ditaa" . artist)
+             ("asymptote" . asy)
+             ("dot" . fundamental)
+             ("sqlite" . sql)
+             ("calc" . fundamental)
+             ("C" . c)
+             ("cpp" . c++)
+             ("C++" . c++)
+             ("screen" . shell-script)
+             ("shell" . sh)
+             ("bash" . sh)
+             ("rust" . rustic)
+             ("rust" . rustic)
+             ("awk" . bash)
+             ("json" . "js")
+             ;; Used by language-detection.el
+             ("emacslisp" . emacs-lisp)
+             ;; Used by Google Code Prettify
+             ("el" . emacs-lisp))))
+
+(provide 'tool-shr)
+;; ends here.

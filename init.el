@@ -1,7 +1,5 @@
 ;;; init.el --- my emacs init file -*- lexical-binding:t; -*-
 
-;;; Commentary:
-
 ;;; Code:
 
 ;; init
@@ -274,6 +272,7 @@
 
 (setup (:elpaca doom-modeline)
   (doom-modeline-mode +1)
+  (:require advance-words-count)
   (:option doom-modeline-bar-width 3
            doom-modeline-github nil
            doom-modeline-mu4e nil
@@ -281,11 +280,37 @@
            doom-modeline-minor-modes nil
            doom-modeline-major-mode-icon nil
            doom-modeline-buffer-file-name-style 'relative-from-project
-           ;; Only show file encoding if it's non-UTF-8 and different line endings
-           ;; than the current OSes preference
            doom-modeline-buffer-encoding 'nondefault
-           doom-modeline-default-eol-type (if (featurep :system 'windows) 1 0)))
+           doom-modeline-default-eol-type (if (featurep :system 'windows) 1 0)
+           doom-modeline-enable-buffer-position nil)
 
+  (doom-modeline-def-segment word-count-advance ()
+    (let* ((start (point-min))
+           (end (point-max))
+           (list (advance-words-count start end))
+           (cjk (car list))
+           (ascii (car (last list)))
+           (wc (+ cjk ascii)))
+      (propertize (format " CJK:%d Total:%d" cjk wc)
+                  'face (doom-modeline-face))))
+
+  (doom-modeline-def-modeline 'main
+    '(eldoc bar window-state workspace-name window-number modals matches follow buffer-info remote-host buffer-position word-count-advance parrot selection-info)
+    '(compilation objed-state misc-info project-name persp-name battery grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs check time)))
+
+(setup (:elpaca nano-modeline)
+  (:require nano-modeline)
+  (nano-modeline-text-mode +1)
+  (:hooks prog-mode-hook            nano-modeline-prog-mode
+          text-mode-hook            nano-modeline-text-mode
+          org-mode-hook             nano-modeline-org-mode
+          pdf-view-mode-hook        nano-modeline-pdf-mode
+          term-mode-hook            nano-modeline-term-mode
+          messages-buffer-mode-hook nano-modeline-message-mode
+          org-capture-mode-hook     nano-modeline-org-capture-mode
+          org-agenda-mode-hook      nano-modeline-org-agenda-mode))
+
+(setup (:elpaca advance-words-count :host github :repo "LdBeth/advance-words-count.el"))
 
 (setup (:elpaca enlight)
 
@@ -347,12 +372,6 @@
                                      (?\「. ?\」)
                                      (?\< . ?\>)
                                      (?\【. ?\】))))
-
-(setup (:elpaca parinfer-rust-mode)
-  (:custom parinfer-rust-auto-download t
-           parinfer-rust-library-directory (expand-file-name (file-name-as-directory "modules/parinfer-rust")
-                                                             user-emacs-directory))
-  (:hook emacs-lisp-mode clojure-mode scheme-mode common-lisp-mode))
 
 (setup (:elpaca smartparens)
   (:require smartparens-config)
@@ -709,72 +728,6 @@
                  split-width-threshold 120
                  pop-up-windows nil)))
 
-  (add-hook 'after-init-hook
-            #'(lambda () (progn (defface nano-default '((t)) "")   (defface nano-default-i '((t)) "")
-                           (defface nano-highlight '((t)) "") (defface nano-highlight-i '((t)) "")
-                           (defface nano-subtle '((t)) "")    (defface nano-subtle-i '((t)) "")
-                           (defface nano-faded '((t)) "")     (defface nano-faded-i '((t)) "")
-                           (defface nano-salient '((t)) "")   (defface nano-salient-i '((t)) "")
-                           (defface nano-popout '((t)) "")    (defface nano-popout-i '((t)) "")
-                           (defface nano-strong '((t)) "")    (defface nano-strong-i '((t)) "")
-                           (defface nano-critical '((t)) "")  (defface nano-critical-i '((t)) "")
-
-                           (defun nano-set-face (name &optional foreground background weight)
-                             "Set NAME and NAME-i faces with given FOREGROUND, BACKGROUND and WEIGHT"
-
-                             (apply #'set-face-attribute `(,name nil
-                                                                 ,@(when foreground `(:foreground ,foreground))
-                                                                 ,@(when background `(:background ,background))
-                                                                 ,@(when weight `(:weight ,weight))))
-                             (apply #'set-face-attribute `(,(intern (concat (symbol-name name) "-i")) nil
-                                                           :foreground ,(face-background 'nano-default)
-                                                           ,@(when foreground `(:background ,foreground))
-                                                           :weight regular)))
-
-                           (set-face-attribute 'header-line nil
-                                               :background 'unspecified
-                                               :underline nil
-                                               :box `( :line-width 1
-                                                       :color ,(face-background 'nano-default))
-                                               :inherit 'nano-subtle)
-
-                           (nano-set-face 'nano-default "#37474F" "#FFFFFF") ;; Blue Grey / L800
-                           (nano-set-face 'nano-strong "#000000" nil 'regular) ;; Black
-                           (nano-set-face 'nano-highlight nil "#FAFAFA") ;; Very Light Grey
-                           (nano-set-face 'nano-subtle nil "#ECEFF1") ;; Blue Grey / L50
-                           (nano-set-face 'nano-faded "#90A4AE") ;; Blue Grey / L300
-                           (nano-set-face 'nano-salient "#673AB7") ;; Deep Purple / L500
-                           (nano-set-face 'nano-popout "#FFAB91") ;; Deep Orange / L200
-                           (nano-set-face 'nano-critical "#FF6F00") ;; Amber / L900
-
-                           (nano-set-face 'nano-default "#ECEFF4" "#2E3440") ;; Snow Storm 3
-                           (nano-set-face 'nano-strong "#ECEFF4" nil 'regular) ;; Polar Night 0
-                           (nano-set-face 'nano-highlight nil "#3B4252")  ;; Polar Night 1
-                           (nano-set-face 'nano-subtle nil "#434C5E") ;; Polar Night 2
-                           (nano-set-face 'nano-faded "#677691") ;;
-                           (nano-set-face 'nano-salient "#81A1C1")  ;; Frost 2
-                           (nano-set-face 'nano-popout "#D08770") ;; Aurora 1
-                           (nano-set-face 'nano-critical "#EBCB8B") ;; Aurora 2
-
-                           (setopt header-line-format
-                                   '(:eval
-                                     (let ((prefix (cond (buffer-read-only     '("RO" . nano-salient-i))
-                                                         ((buffer-modified-p)  '("**" . nano-faded))
-                                                         (t                    '("RW" . nano-faded-i))))
-                                           (mode (concat "(" (downcase (cond ((consp mode-name) (car mode-name))
-                                                                             ((stringp mode-name) mode-name)
-                                                                             (t "unknow")))
-                                                         " mode)"))
-                                           (coords (format-mode-line "%c:%l ")))
-                                       (list
-                                        (propertize " " 'face (cdr prefix)  'display '(raise -0.25))
-                                        (propertize (car prefix) 'face (cdr prefix))
-                                        (propertize " " 'face (cdr prefix) 'display '(raise +0.25))
-                                        (propertize (format-mode-line " %b ") 'face 'nano-strong)
-                                        (propertize mode 'face 'header-line)
-                                        (propertize " " 'display `(space :align-to (- right ,(length coords))))
-                                        (propertize coords 'face 'nano-faded))))))))
-
   (setopt minibuffer-prompt-properties
           '(read-only t intangible t cursor-intangible t face minibuffer-prompt))
   (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
@@ -782,9 +735,6 @@
   (setopt enable-recursive-minibuffers t)
 
   (setopt window-resize-pixelwise t))
-
-
-
 
 (setup feature
 
@@ -1720,4 +1670,4 @@
 
 (setup module
   (:load lang-markdown lang-haskell lang-racket lang-chinese lang-web lang-org :dirs ("site-lisp/lang/"))
-  (:load tool-eww :dirs ("site-lisp/tool/")))
+  (:load tool-shr tool-fanyi :dirs ("site-lisp/tool/")))

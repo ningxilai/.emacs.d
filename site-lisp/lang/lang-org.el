@@ -286,6 +286,8 @@
 (setup (:elpaca org-edit-indirect)
   (:hooks org-mode-hook org-edit-indirect-mode))
 
+(setup (:elpaca org-make-toc))
+
 (setup (:elpaca org-appear)
   (:hooks org-mode-hook org-appear-mode)
   (:custom org-appear-inside-latex t
