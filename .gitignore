@@ -1,0 +1,6 @@
+tags
+custom.el
+var/
+etc/
+tree-sitter/
+modules/
