@@ -1,6 +1,7 @@
 tags
 custom.el
-var/
-etc/
-tree-sitter/
-modules/
+/var/
+/etc/
+/tree-sitter/
+/modules/
+/elpaca/

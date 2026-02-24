@@ -1732,4 +1732,4 @@
 
 (setup module
   (:load lang-markdown lang-haskell lang-racket lang-chinese lang-web lang-org :dirs ("site-lisp/lang/"))
-  (:load tool-shr tool-fanyi :dirs ("site-lisp/tool/")))
+  (:load tool-shr tool-fanyi tool-reader :dirs ("site-lisp/tool/")))
