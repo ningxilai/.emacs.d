@@ -10,4 +10,6 @@
 此目录下存放着`setup.el`以及`setup.el`的扩展，以便于管理配置代码段和`module`。
 
 ### `user-lisp`
-目前尚未确定是否将其纳入稳定标准当中，对其行为的配置仍属待定。
+~~目前尚未确定是否将其纳入稳定标准当中，对其行为的配置仍属待定。~~
+
+使用[persistent-cached-load-filter](https://github.com/include-yy/persistent-cached-load-filter)进行了启动时速度优化。

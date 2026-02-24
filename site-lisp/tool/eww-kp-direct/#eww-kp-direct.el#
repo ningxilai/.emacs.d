@@ -34,10 +34,6 @@ If nil, auto-detect from current font."
   (or (and (boundp 'shr-internal-width)
            (local-variable-if-set-p 'shr-internal-width)
            (symbol-value 'shr-internal-width))
-      (and (boundp 'shr-width)
-           (local-variable-if-set-p 'shr-width)
-           (symbol-value 'shr-width)
-           (* (symbol-value 'shr-width) (frame-char-width)))
       (and (fboundp 'pixel-fill-width)
            (pixel-fill-width))
       (if-let* ((window (get-buffer-window (current-buffer))))
@@ -53,28 +49,7 @@ If nil, auto-detect from current font."
         (plist-get props 'shr-indentation)
         (memq (plist-get props 'face)
               '(shr-code shr-pre shr-h1 shr-h2 shr-h3 shr-h4
-                shr-h5 shr-h6 shr-heading)))))
-
-(defun eww-kp--find-paragraphs (start end)
-  "Find paragraph bounds in region START..END.
-Returns list of (START . END) pairs."
-  (save-excursion
-    (goto-char start)
-    (let (paragraphs)
-      (while (< (point) end)
-        (skip-chars-forward "\n" end)
-        (when (and (< (point) end)
-                   (not (get-text-property (point) 'eww-kp-justified))
-                   (not (eww-kp--should-skip-p (point))))
-          (let ((para-start (point)))
-            ;; Find paragraph end (two consecutive newlines or buffer end)
-            (while (and (< (point) end)
-                      (not (looking-at "\n\\s-*\n")))
-              (forward-char 1))
-            (let ((para-end (point)))
-              (push (cons para-start para-end) paragraphs))))
-        (forward-char 1))
-      (nreverse paragraphs))))
+                         shr-h5 shr-h6 shr-heading)))))
 
 (defun eww-kp--apply-kp-to-paragraph (start end)
   "Apply Knuth-Plass line breaking to paragraph START..END."
@@ -83,15 +58,16 @@ Returns list of (START . END) pairs."
          (text (buffer-substring-no-properties start end))
          (line-pixel (eww-kp--pixel-width))
          (word-count (length (split-string text "[[:space:]]+" t))))
+    (message "[eww-kp] apply: words=%d pixel=%s" word-count line-pixel)
     (when (and (> end start)
-               (> word-count 4)
-               (not (string-match-p "^[[:space:]]*$" text))
-               (not (string-match-p "^https?://" text)))
+               (>= word-count 4)
+               (not (string-match-p "^[[:space:]]*$" text)))
       (condition-case err
           (let* ((justified-text (ekp-pixel-justify text line-pixel))
                  (changed-p (not (string= justified-text text)))
                  (inhibit-read-only t)
                  (new-end (+ start (length justified-text))))
+            (message "[eww-kp] result: changed=%s length=%d" changed-p (length justified-text))
             (when changed-p
               (delete-region start end)
               (insert justified-text)
@@ -100,16 +76,32 @@ Returns list of (START . END) pairs."
             new-end)
         (error
          (message "[eww-kp] Error: %s" (error-message-string err))
-         nil)))))
+         nil))))
 
 (defun eww-kp--process-region (start end)
   "Process paragraphs in region START..END with KP algorithm."
   (when (and eww-kp-use-kp
-             (derived-mode-p 'eww-mode))
-    (let ((width (eww-kp--pixel-width)))
-      (when (and width (> width 0))
-        (dolist (para (eww-kp--find-paragraphs start end))
-          (eww-kp--apply-kp-to-paragraph (car para) (cdr para)))))))
+             (derived-mode-p 'eww-mode)
+             (bound-and-true-p shr-internal-width))
+    (save-excursion
+      (save-restriction
+        (widen)
+        (goto-char start)
+        (let ((inhibit-read-only t))
+          (while (and (< (point) end)
+                      (not (eobp))
+                      (not (looking-at "^[[:space:]]*$")))
+            (unless (or (get-text-property (point) 'eww-kp-justified)
+                        (eww-kp--should-skip-p (point)))
+              (let ((para-start (point)))
+                (while (and (not (eobp))
+                          (not (looking-at "^[[:space:]]*$"))
+                          (not (get-text-property (point) 'eww-kp-justified)))
+                  (forward-line 1))
+                (let ((para-end (point)))
+                  (when (> para-end para-start)
+                    (eww-kp--apply-kp-to-paragraph para-start para-end)))))
+            (forward-line 1)))))))
 
 (defun eww-kp--after-shr-render (start end &rest _)
   "Advice: Process paragraphs after shr rendering completes."
@@ -123,7 +115,7 @@ Returns list of (START . END) pairs."
     (setq eww-kp--processed-regions nil)
     (advice-add 'shr-insert-document :after #'eww-kp--after-shr-render)
     (advice-add 'shr-fill-lines :after #'eww-kp--after-shr-render)
-    (run-with-idle-timer 1.5 nil
+    (run-with-idle-timer 0.8 nil
       (lambda ()
         (when (derived-mode-p 'eww-mode)
           (eww-kp--process-region (point-min) (point-max)))))))

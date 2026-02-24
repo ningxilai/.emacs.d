@@ -12,8 +12,6 @@
            ekp-hyphen-penalty 50
            ekp-adjacent-fitness-penalty 100
 
-           ;; pixels
-
            ekp-lws-ideal-pixel 8
            ekp-lws-stretch-pixel 4
            ekp-lws-shrink-pixel 3
@@ -28,10 +26,8 @@
 
   (:load eww-kp-direct :dirs ("site-lisp/tool/eww-kp-direct"))
   (:require eww-kp-direct)
-  (:init
-   ;; Enable KP algorithm for EWW
-   (setopt eww-kp-use-kp t
-           eww-kp-line-width 65)))
+  (:option eww-kp-use-kp t
+           eww-kp-char-width nil))
 
 (setup (:elpaca nov)
 

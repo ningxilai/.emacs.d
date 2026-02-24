@@ -8,7 +8,10 @@
 ;;  (expand-file-name  "emacs/eln-cache/" (xdg-cache-home)))
 
 (setq-default gc-cons-threshold most-positive-fixnum
-	      gc-cons-percentage 1.0)
+              gc-cons-percentage 1.0)
+
+(setq load-suffixes '(".elc" ".el" ".so")
+      load-file-rep-suffixes '(""))
 
 ;; --- Frame / windows layout & behavior --------------------------------------
 (setq default-frame-alist
@@ -20,10 +23,10 @@
         (internal-border-width . 24)
         (inhibit-double-buffering . nil))
       frame-title-format '(:eval (concat
-	                          (if (and buffer-file-name (buffer-modified-p)) "•")
-	                          (buffer-name)
-	                          (if buffer-file-name
-		                      (concat " (" (directory-file-name (abbreviate-file-name default-directory)) ")")) " - Emacs"))
+                                  (if (and buffer-file-name (buffer-modified-p)) "•")
+                                  (buffer-name)
+                                  (if buffer-file-name
+                                      (concat " (" (directory-file-name (abbreviate-file-name default-directory)) ")")) " - Emacs"))
       bottom-divider-width nil
       right-divider-width nil
       window-divider-default-bottom-width 1
@@ -80,7 +83,6 @@
 ;; (setq-default mode-line-format (add-to-list 'mode-line-format '(:eval (if (buffer-modified-p) " ●" " ○"))))
 
 ;; (setq-default frame-title-format "%b")
-
 
 ;; (setq-default header-line-format '("GC: " (:eval (number-to-string gcs-done)) " - " (:eval (number-to-string gc-elapsed)) "s"))
 

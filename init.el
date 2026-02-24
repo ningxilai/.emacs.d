@@ -60,6 +60,10 @@
 
   )
 
+(when (boundp 'load-path-filter-function)
+  (when (require 'persistent-cached-load-filter nil t)
+    (setq persistent-cached-load-filter-assoc-type 'hash+eq)
+    (persistent-cached-load-filter-easy-setup)))
 
 (setup (:elpaca gcmh)
   (:hooks elpaca-after-init-hook gcmh-mode)
@@ -357,7 +361,7 @@
 
   (defun lisp-setup-check-parens () (add-hook 'write-file-functions #'check-parens nil t))
 
-  (:hooks emacs-lisp-mode-hook  lisp-setup-check-parens)
+  (:hooks emacs-lisp-mode-hook lisp-setup-check-parens)
 
   (:option electric-pair-mode t
            electric-indent-mode t
@@ -1274,7 +1278,7 @@
 (setup (:elpaca orderless)
   (:option completion-styles '(orderless basic)
            completion-category-defaults nil
-           completion-category-overrides '((file (styles partial-completion)))
+           completion-category-overrides '((file (styles basic partial-completion)))
            orderless-component-separator #'orderless-escapable-split-on-space))
 
 (setup (:elpaca nerd-icons-completion)
@@ -1300,6 +1304,14 @@
   (:custom marginalia-max-relative-age 0
            marginalia-align 'right)
   (:hooks marginalia-mode-hook nerd-icons-completion-marginalia-setup))
+
+(setup (:elpaca citre :host github :repo "universal-ctags/citre")
+  (:require citre citre-config)
+  (:global "C-c p" citre-peek)
+  (:with-map citre-peek-keymap (:bind "n" citre-peek-next-line
+                                      "p" citre-peek-prev-line
+                                      "C-g" citre-peek-abort
+                                      "j" citre-peek-jump)))
 
 (setup ibuffer
   (:hooks ibuffer-mode-hook hl-line-mode)
@@ -1343,9 +1355,38 @@
           (eshell))
       (switch-to-buffer-other-window "*eshell*")))
 
+  (defun eshell-browser-history ()
+    "Insert command from eshell history at point."
+    (interactive)
+    (require 'em-hist)
+    (let* ((start-pos (save-excursion (eshell-bol) (point)))
+           (end-pos (point))
+           (input (buffer-substring-no-properties start-pos end-pos))
+           (history (when (> (ring-size eshell-history-ring) 0)
+                      (ring-elements eshell-history-ring)))
+           (command (completing-read "Command: " history nil t input)))
+      (delete-region start-pos end-pos)
+      (insert command)))
+
+  (:require em-smart)
+  (:option eshell-where-to-jump 'begin
+           eshell-review-quick-commands nil
+           eshell-smart-space-goes-to-end t)
+
+  (:require em-term)
+  (mapc (lambda (x) (add-to-list 'eshell-visual-commands x))
+        '("el" "elinks" "htop" "less" "ssh" "tmux" "top"))
+
+  (add-hook 'eshell-output-filter-functions #'eshell-truncate-buffer)
+
   (:hooks eshell-mode-hook completion-preview-mode)
 
   (:option eshell-highlight-prompt nil
+           eshell-cmpl-cycle-completions nil
+           eshell-buffer-maximum-lines 20000
+           eshell-history-size 350
+           eshell-hist-ignoredups t
+           eshell-plain-echo-behavior t
            eshell-prompt-regexp "^[^αλ\n]*[αλ] "
            eshell-prompt-function
            (lambda nil
@@ -1359,7 +1400,6 @@
               (if (= (user-uid) 0)
                   (propertize " α " 'face `(:foreground "#FF6666"))
                 (propertize " λ " 'face `(:foreground "#A6E22E"))))))
-
   )
 
 (setup (:elpaca vterm)
@@ -1367,6 +1407,28 @@
            ansi-color-for-comint-mode t
            comint-prompt-read-only t
            comint-buffer-maximum-size 4096)
+  (:init (defun shell-comint-input-sender-hook ()
+           "Check certain shell commands.
+ Executes the appropriate behavior for certain commands."
+           (setq comint-input-sender
+                 (lambda (proc command)
+                   (cond
+                    ;; Check for clear command and execute it.
+                    ((string-match "^[ \t]*clear[ \t]*$" command)
+                     (comint-send-string proc "\n")
+                     (let ((inhibit-read-only  t))
+                       (erase-buffer)))
+                    ;; Check for man command and execute it.
+                    ((string-match "^[ \t]*man[ \t]*" command)
+                     (comint-send-string proc "\n")
+                     (setq command (replace-regexp-in-string
+                                    "^[ \t]*man[ \t]*" "" command))
+                     (setq command (replace-regexp-in-string
+                                    "[ \t]+$" "" command))
+                     (funcall 'man command))
+                    ;; Send other commands to the default handler.
+                    (t (comint-simple-send proc command)))))))
+  (add-hook 'shell-mode-hook 'shell-comint-input-sender-hook)
   (add-to-list 'comint-output-filter-functions 'ansi-color-process-output)
   (defun vterm--rename-buffer-as-title (title)
     (rename-buffer (format "vterm @ %s" title) t))
@@ -1449,7 +1511,7 @@
                                      ,(face-foreground 'font-lock-variable-name-face))))
   (:bind [remap xref-find-definitions] lsp-ui-peek-find-definitions
          [remap xref-find-references] lsp-ui-peek-find-references)
-  (:option lsp-ui-set-doc-border "#1672")
+  (:option lsp-ui-set-doc-border "#167167")
   (:hooks lsp-mode-hook lsp-ui-mode))
 
 (setup treesit

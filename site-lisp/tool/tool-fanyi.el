@@ -35,7 +35,7 @@
   (:custom gt-default-translator (gt-translator
                                   :taker (gt-taker :text 'buffer :pick 'paragraph)
                                   :engines (gt-bing-engine)
-                                  :render (gt-overlay-render)))
+                                  :render (gt-buffer-render)))
   (:option gt-langs '(en zh)))
 
 (provide 'tool-fanyi)
