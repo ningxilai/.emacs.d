@@ -1,5 +1,7 @@
 tags
 custom.el
+*.elc
+\#*
 /var/
 /etc/
 /tree-sitter/
