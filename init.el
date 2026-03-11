@@ -59,7 +59,6 @@
 
   )
 
-
 (when (boundp 'load-path-filter-function)
   (when (require 'persistent-cached-load-filter nil t)
     (setq persistent-cached-load-filter-assoc-type 'hash+eq)
