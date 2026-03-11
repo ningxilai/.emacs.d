@@ -10,4 +10,5 @@
            lsp-ltex-plus-user-rules-path "etc/lsp/lsp-ltex-plus"))
 
 (provide 'tool-ltex-plus)
+
 ;; ends here.

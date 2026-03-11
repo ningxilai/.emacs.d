@@ -1,5 +1,7 @@
 ;;;  -*- lexical-binding: t; -*-
 
+;;; Code:
+
 ;; fanyi/gt
 
 (setup (:elpaca fanyi)
@@ -39,4 +41,5 @@
   (:option gt-langs '(en zh)))
 
 (provide 'tool-fanyi)
+
 ;; ends here.

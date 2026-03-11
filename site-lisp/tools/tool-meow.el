@@ -100,7 +100,6 @@
   (meow-setup-pretty-paren))
 
 (setup which-key
-
   (:option which-key-lighter " WK"
            which-key-sort-order 'which-key-description-order
            which-key-separator " "
@@ -206,9 +205,49 @@
 
 (setup (:elpaca mic-paren) (:hooks prog-mode-hook paren-activate))
 
-(setup (:elpaca macrostep)
-  (define-key emacs-lisp-mode-map (kbd "C-c e") #'macrostep-expand)
-  (define-key lisp-interaction-mode-map (kbd "C-c e") #'macrostep-expand))
+(setup (:elpaca unfill)
+  (:bind [remap fill-paragraph] unfill-toggle))
+
+(setup (:elpaca filladapt)
+  (filladapt-mode t))
+
+(setup (:elpaca visual-fill-column :host codeberg :repo "tarsiiformes/visual-fill-column")
+  (:init (advice-add 'text-scale-increase :after #'visual-fill-column-adjust)
+         (advice-add 'text-scale-decrease :after #'visual-fill-column-adjust))
+  (:option visual-fill-column-center-text t
+           visual-fill-column-width 100))
+
+(setup (:elpaca undo-fu)
+  (:hooks emacs-startup-hook undo-fu-mode)
+  (:option undo-limit 256000           ; 256kb (default is 160kb)
+           undo-strong-limit 2000000   ; 2mb   (default is 240kb)
+           undo-outer-limit 36000000)  ; 36mb  (default is 24mb)
+  (define-minor-mode undo-fu-mode
+    "Enables `undo-fu' for the current session."
+    :keymap (let ((map (make-sparse-keymap)))
+              (define-key map [remap undo] #'undo-fu-only-undo)
+              (define-key map [remap redo] #'undo-fu-only-redo)
+              (define-key map (kbd "C-_")     #'undo-fu-only-undo)
+              (define-key map (kbd "M-_")     #'undo-fu-only-redo)
+              (define-key map (kbd "C-M-_")   #'undo-fu-only-redo-all)
+              (define-key map (kbd "C-x r u") #'undo-fu-session-save)
+              (define-key map (kbd "C-x r U") #'undo-fu-session-recover)
+              map)
+    :init-value nil
+    :global t))
+
+(setup (:elpaca undo-fu-session)
+  (undo-fu-session-global-mode)
+  (:option undo-fu-session-directory (file-name-concat user-emacs-directory "var/undo-fu-session/"))
+  (:custom undo-fu-session-incompatible-files '("\\.gpg$" "/COMMIT_EDITMSG\\'" "/git-rebase-todo\\'"))
+  (when (executable-find "zstd")
+    ;; There are other algorithms available, but zstd is the fastest, and speed
+    ;; is our priority within Emacs
+    (setopt undo-fu-session-compression 'zst)))
+
+(setup (:elpaca mwim)
+  (:bind "C-a" mwim-beginning-of-code-or-line
+         "C-e" mwim-end-of-code-or-line))
 
 (provide 'tool-meow)
 

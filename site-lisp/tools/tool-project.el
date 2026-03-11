@@ -43,6 +43,14 @@
 
 (setup (:elpaca majutsu :host github :repo "0WD0/majutsu"))
 
+(setup (:elpaca diff-hl)
+  (:hooks prog-mode-hook diff-hl-mode))
+
+(setup ediff
+  (:option ediff-keep-variants nil
+           ediff-split-window-function 'split-window-horizontally
+           ediff-window-setup-function 'ediff-setup-windows-plain))
+
 (provide 'tool-project)
 
 ;; ends here.

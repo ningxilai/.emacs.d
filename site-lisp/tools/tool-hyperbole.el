@@ -13,4 +13,5 @@
                        "xdg-open"))))
 
 (provide 'tool-hyperbole)
+
 ;; ends here.

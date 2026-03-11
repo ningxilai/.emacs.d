@@ -12,4 +12,6 @@
                                       "C-g" citre-peek-abort
                                       "j" citre-peek-jump)))
 
+(provide 'tool-tags)
+
 ;; ends here.
