@@ -51,6 +51,7 @@
     (elpaca `(,@elpaca-order)))
 
 
+
   (dolist (dir '("lisp" "site-lisp"))
     (push (expand-file-name dir user-emacs-directory) load-path))
 
@@ -102,19 +103,20 @@
 
 (setup savehist
   (:hooks elpaca-after-init-hook savehist-mode)
-  (:option savehist-save-minibuffer-history t
-           savehist-additional-variables '(search-ring
-                                           regexp-search-ring
-                                           extended-command-history
-                                           kill-ring
-                                           mark-ring
-                                           global-mark-ring
-                                           kmacro-ring
-                                           log-edit-comment-ring
-                                           register-alist)
-           ;; We use an idle timer instead, as saving can cause
-           ;; noticable delays with large histories.
-           savehist-autosave-interval nil))
+  (:option
+   savehist-save-minibuffer-history t
+   savehist-additional-variables '(search-ring
+                                   regexp-search-ring
+                                   extended-command-history
+                                   kill-ring
+                                   mark-ring
+                                   global-mark-ring
+                                   kmacro-ring
+                                   log-edit-comment-ring
+                                   register-alist)
+   ;; We use an idle timer instead, as saving can cause
+   ;; noticable delays with large histories.
+   savehist-autosave-interval nil))
 
 (setup saveplace
   (:hooks elpaca-after-init-hook save-place-mode
@@ -977,33 +979,100 @@
                                      ("Yuanti SC"           . 1.16)
                                      ("Apple Color Emoji"   . 0.91)))
 
-  (:custom-face fixed-pitch  ((t((:family "SF Mono"))))
-                fixed-pitch-serif ((t((:family "SF Mono")))) ;; New York
-                variable-pitch ((t((:family "SF Pro")))))) ;; Helvetica Neue
+  (:custom fixed-pitch  '(t((:family "SF Mono")))
+           fixed-pitch-serif '(t((:family "SF Mono"))) ;; New York
+           variable-pitch '(t((:family "SF Pro"))))) ;; Helvetica Neue
+
 
 (setup (:elpaca fontaine)
-  (:option fontaine-presets
-           '((regular
-              :default-height 120
-              :default-weight regular
-              :fixed-pitch-height 1.0
-              :variable-pitch-height 1.0)
-             (large
-              :default-height 140
-              :default-weight normal
-              :fixed-pitch-height 1.0
-              :variable-pitch-height 1.05)
-             (t
-              :default-family "Lilex Nerd Font Mono" ;; CaskaydiaCove Nerd Font Mono
-              :fixed-pitch-family "Lilex Nerd Font Mono" ;; CaskaydiaCove Nerd Font Mono
-              :variable-pitch-family "Lilex Nerd Font Mono" ;; CaskaydiaCove Nerd Font Mono
-              :italic-family "IBM Plex Mono" ;; CaskaydiaCove Nerd Font Mono Italic
-              :blod-family "IBM Plex Serif" ;; CaskaydiaCove Nerd Font Mono Bold
-              :variable-pitch-weight normal
-              :bold-weight bold
-              :italic-slant italic
-              :line-spacing 0.1));; Core package
-           fontaine-set-preset 'regular)
+  (:init
+   (set fontaine-presets
+        '((regular
+           :default-height 120
+           :default-weight regular
+           :fixed-pitch-height 1.0
+           :variable-pitch-height 1.0)
+          (large
+           :default-height 140
+           :default-weight normal
+           :fixed-pitch-height 1.0
+           :variable-pitch-height 1.05)
+          (t
+           :default-family "Lilex Nerd Font Mono" ;; CaskaydiaCove Nerd Font Mono
+           :fixed-pitch-family "Lilex Nerd Font Mono" ;; CaskaydiaCove Nerd Font Mono
+           :variable-pitch-family "Lilex Nerd Font Mono" ;; CaskaydiaCove Nerd Font Mono
+           :italic-family "IBM Plex Mono" ;; CaskaydiaCove Nerd Font Mono Italic
+           :blod-family "IBM Plex Serif" ;; CaskaydiaCove Nerd Font Mono Bold
+           :variable-pitch-weight normal
+           :bold-weight bold
+           :italic-slant italic
+           :line-spacing 0.1));; Core package
+        (use-package prescient
+          :custom
+          ;; My settings for relevant user options:
+          ;; (prescient-aggressive-file-save t)
+          ;; (prescient-sort-length-enable nil)
+          ;; (prescient-sort-full-matches-first t)
+          ;; (prescient-history-length 200)
+          ;; (prescient-frequency-decay 0.997)
+          ;; (prescient-frequency-threshold 0.05)
+          :config
+          ;; Optional: persist prescient statistics to an on-disk cache
+          ;; (`prescient-save-file')
+          (prescient-persist-mode 1))
+
+        ;; Integration with corfu
+        (use-package corfu-prescient
+          ;; The :after keyword defers loading this package, meaning this package is
+          ;; only loaded until something else wants something from it.  If we want
+          ;; `corfu-prescient-mode' to be enabled in the :config block, we need to
+          ;; prevent deferral with the :demand keyword. In combination with our :after
+          ;; block, the package is immediately loaded only after both corfu and
+          ;; prescient are loaded.
+          :demand t
+          :after corfu prescient
+          :custom
+          ;; Sorting.  These are the default values but I include them here to be
+          ;; explicit.
+          (corfu-prescient-enable-sorting t)
+          (corfu-prescient-override-sorting nil) ; Don't override `display-sort-function'
+
+          ;; Filtering
+          (corfu-prescient-enable-filtering nil) ; We want orderless to do the filtering
+          ;; See also `corfu-prescient-completion-styles',
+          ;; `corfu-prescient-completion-category-overrides' and
+          ;; `prescient--completion-recommended-overrides'.  Those options apply only
+          ;; when `corfu-prescient-enable-filtering' is non-nil.
+          :config
+          (corfu-prescient-mode 1))
+
+        ;; Integration with vertico
+        (use-package vertico-prescient
+          ;; The :after keyword defers loading this package, meaning this package is
+          ;; only loaded until something else wants something from it.  If we want
+          ;; `vertico-prescient-mode' to be enabled in the :config block, we need to
+          ;; prevent deferral with the :demand keyword. In combination with our :after
+          ;; block, the package is immediately loaded only after both vertico and
+          ;; prescient are loaded.
+          :demand t
+          :after vertico prescient
+          :custom
+          ;; Sorting.  These are the default values but I include them here to be
+          ;; explicit.
+          (vertico-prescient-enable-sorting t)
+          (vertico-prescient-override-sorting nil) ; Don't override `display-sort-function'
+
+          ;; Filtering
+          (vertico-prescient-enable-filtering nil) ; We want orderless to do the filtering
+          ;; See also `vertico-prescient-completion-styles',
+          ;; `vertico-prescient-completion-category-overrides', and
+          ;; `prescient--completion-recommended-overrides'.  Those options apply only
+          ;; when when `vertico-prescient-enable-filtering' is non-nil.
+          :config
+          (vertico-prescient-mode 1))
+        ))
+
+  (:option fontaine-set-preset 'regular)
   (:hooks kill-emacs-hook fontaine-store-latest-preset)
   (require 'xdg)
   (setq fontaine-latest-state-file (expand-file-name "emacs/fontaine-latest-state.eld" (xdg-cache-home))))
@@ -1020,7 +1089,8 @@
   (:option dabbrev-upcase-means-case-search t
            dabbrev-check-all-buffers nil
            dabbrev-ignored-buffer-modes
-           '(archive-mode authinfo-mode image-mode doc-view-mode pdf-view-mode tags-table-mode)
+           '(archive-mode authinfo-mode image-mode doc-view-mode
+                          pdf-view-mode tags-table-mode)
            dabbrev-ignored-buffer-regexps
            ;; '("\\`[ *]")
            '(;; - Buffers starting with a space (internal or temporary buffers)

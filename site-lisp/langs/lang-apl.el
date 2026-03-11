@@ -33,10 +33,10 @@
              (set-input-method "APL-Z" t)
              (buffer-face-mode 1)
              (setq-local buffer-face-mode-face '((:family "BQN386 Unicode" :height 125)))
-             (electric-pair-mode -1)))))
+             (electric-pair-mode -1))))
 
-(:hooks gnu-apl-mode-hook gnu-apl-mode-buffer-face-config
-        gnu-apl-interactive-mode-hook gnu-apl-interactive-mode-buffer-face-config)
+  (:hooks gnu-apl-mode-hook gnu-apl-mode-buffer-face-config
+          gnu-apl-interactive-mode-hook gnu-apl-interactive-mode-buffer-face-config))
 
 (provide 'lang-apl)
 
