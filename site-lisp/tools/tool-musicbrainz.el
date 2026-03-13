@@ -5,7 +5,7 @@
 ;; MusicBrainz
 
 (setup musicbrainz
-  (:load musicbrainz :dirs ("site-lisp/tools/musicbrainz/")))
+  (:load musicbrainz musicbrainz-org :dirs ("site-lisp/tools/musicbrainz/")))
 
 (provide 'tool-musicbrainz)
 

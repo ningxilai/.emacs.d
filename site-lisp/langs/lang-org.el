@@ -51,7 +51,7 @@
              "blg" "brf" "fls" "entoc" "ps" "spl" "bbl"
              "tex" "bcf")
            org-latex-classes
-           '("ews"
+           '(("ews"
              "\\documentclass[11pt, twoside, hidelinks]{memoir}
         \\setstocksize{9.25in}{7.5in}
         \\settrimmedsize{\\stockheight}{\\stockwidth}{*}
@@ -78,7 +78,7 @@
              ("\\chapter{%s}" . "\\chapter*{%s}")
              ("\\section{%s}" . "\\section*{%s}")
              ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
 
   (:hooks org-after-refile-insert (lambda ()
                                     (when (bound-and-true-p org-capture-is-refiling)

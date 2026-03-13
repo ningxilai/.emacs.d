@@ -1,7 +1,16 @@
 tags
+TAGS
 custom.el
+
+*~
 *.elc
+*.log
+*.tmp
+*.swp
+
 \#*
+.\#*
+
 /var/
 /etc/
 /tree-sitter/

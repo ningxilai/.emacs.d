@@ -111,8 +111,15 @@ Returns list of (START . END) pairs."
         (dolist (para (eww-kp--find-paragraphs start end))
           (eww-kp--apply-kp-to-paragraph (car para) (cdr para)))))))
 
-(defun eww-kp--after-shr-render (start end &rest _)
-  "Advice: Process paragraphs after shr rendering completes."
+(defun eww-kp--after-shr-insert-document (dom)
+  "Advice: Process paragraphs after shr-insert-document completes.
+DOM is the parsed document tree."
+  (when eww-kp-use-kp
+    (eww-kp--process-region (point-min) (point-max))))
+
+(defun eww-kp--after-shr-fill-lines (start end &rest _)
+  "Advice: Process paragraphs after shr-fill-lines completes.
+START and END are the region bounds."
   (when eww-kp-use-kp
     (eww-kp--process-region start end)))
 
@@ -121,8 +128,8 @@ Returns list of (START . END) pairs."
   (when (and eww-kp-use-kp
              (derived-mode-p 'eww-mode))
     (setq eww-kp--processed-regions nil)
-    (advice-add 'shr-insert-document :after #'eww-kp--after-shr-render)
-    (advice-add 'shr-fill-lines :after #'eww-kp--after-shr-render)
+    (advice-add 'shr-insert-document :after #'eww-kp--after-shr-insert-document)
+    (advice-add 'shr-fill-lines :after #'eww-kp--after-shr-fill-lines)
     (run-with-idle-timer 1.5 nil
       (lambda ()
         (when (derived-mode-p 'eww-mode)
@@ -130,8 +137,8 @@ Returns list of (START . END) pairs."
 
 (defun eww-kp--cleanup ()
   "Cleanup KP integration for current buffer."
-  (advice-remove 'shr-insert-document #'eww-kp--after-shr-render)
-  (advice-remove 'shr-fill-lines #'eww-kp--after-shr-render)
+  (advice-remove 'shr-insert-document #'eww-kp--after-shr-insert-document)
+  (advice-remove 'shr-fill-lines #'eww-kp--after-shr-fill-lines)
   (setq eww-kp--processed-regions nil))
 
 (defun eww-kp-toggle ()
