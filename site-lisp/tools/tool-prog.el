@@ -5,15 +5,12 @@
 ;; Prog
 
 (setup (:elpaca lsp-mode)
-  (:option lsp-completion-provider :none
-           flymake-show-diagnostics-at-end-of-line 'fancy)
-
+  (:option lsp-completion-provider :none)
   (defun lsp-mode-setup-completion ()
     (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
           '(flex))) ;; Configure flex
 
-  (:hooks lsp-mode-hook flymake-mode
-          lsp-completion-mode-hook lsp-mode-setup-completion))
+  (:hooks lsp-completion-mode-hook lsp-mode-setup-completion))
 
 (setup (:elpaca lsp-ui)
   (:init (setq lsp-ui-sideline-show-diagnostics nil

@@ -11,15 +11,15 @@
 
     (require 'xdg)
 
-    (defvar elpaca-installer-version 0.11)
+    (defvar elpaca-installer-version 0.12)
     (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
     (defvar elpaca-builds-directory (expand-file-name "emacs/elpaca/builds/" (xdg-cache-home)))
-    (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
+    (defvar elpaca-sources-directory (expand-file-name "sources/" elpaca-directory))
     (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
                                   :ref nil :depth 1 :inherit ignore
                                   :files (:defaults "elpaca-test.el" (:exclude "extensions"))
-                                  :build (:not elpaca--activate-package)))
-    (let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
+                                  :build (:not elpaca-activate)))
+    (let* ((repo  (expand-file-name "elpaca/" elpaca-sources-directory))
            (build (expand-file-name "elpaca/" elpaca-builds-directory))
            (order (cdr elpaca-order))
            (default-directory repo))
@@ -50,7 +50,6 @@
     (add-hook 'after-init-hook #'elpaca-process-queues)
     (elpaca `(,@elpaca-order)))
 
-
   (dolist (dir '("lisp" "site-lisp"))
     (push (expand-file-name dir user-emacs-directory) load-path))
 
@@ -79,5 +78,5 @@
   (:init (exec-path-from-shell-initialize)))
 
 (setup module
-  (:load lang-markdown lang-haskell lang-racket lang-chinese lang-web lang-org lang-elisp :dirs ("site-lisp/langs/"))
-  (:load tool-ui tool-base tool-meow tool-dired tool-prog tool-completion tool-nerd-icons tool-wm tool-formats tool-shr tool-fanyi tool-dired tool-project tool-eshell :dirs ("site-lisp/tools/")))
+  (:load lang-markdown lang-web lang-org lang-elisp :dirs ("site-lisp/langs/"))
+  (:load tool-ui tool-base tool-meow tool-dired tool-prog tool-text tool-rime tool-completion tool-nerd-icons tool-wm tool-formats tool-shr tool-fanyi tool-dired tool-project tool-eshell tool-musicbrainz :dirs ("site-lisp/tools/")))

@@ -6,77 +6,31 @@
 
 (setup (:elpaca cape)
 
-  (add-to-list 'completion-at-point-functions #'cape-file)
-  (add-to-list 'completion-at-point-functions #'cape-elisp-block)
-  (add-to-list 'completion-at-point-functions #'cape-keyword)
-  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-
-  (defun yy/dabbrev-capf () ;; https://emacs-china.org/t/emacs-29-dabbrev-capf-wrong-type-argument-stringp-nil/26271/4
-    "对 `dabbrev-capf' 的简单包装"
-    (dabbrev--reset-global-variables)
-    (setq dabbrev--check-other-buffers nil)
-    (setq dabbrev--check-all-buffers nil)
-    (let* ((abbrev (dabbrev--abbrev-at-point))
-           (beg (progn (search-backward abbrev) (point)))
-           (end (progn (search-forward abbrev) (point)))
-           (ignore-case-p (dabbrev--ignore-case-p abbrev))
-           (list 'uninitialized)
-           (table
-            (lambda (s p a)
-              (if (eq a 'metadata)
-                  `(metadata (cycle-sort-function . ,#'identity)
-                             (category . dabbrev))
-                (when (eq list 'uninitialized)
-                  (save-excursion
-                    ;;--------------------------------
-                    ;; New abbreviation to expand.
-                    ;;--------------------------------
-                    (setq dabbrev--last-abbreviation abbrev)
-                    ;; Find all expansion
-                    (with-temp-message (current-message)
-                      (let* ((inhibit-message t)
-                             (completion-list
-                              (dabbrev--find-all-expansions abbrev ignore-case-p))
-                             (completion-ignore-case ignore-case-p))
-                        (setq list
-                              (cond
-                               ((not (and ignore-case-p dabbrev-case-replace))
-                                completion-list)
-                               ((string= abbrev (upcase abbrev))
-                                (mapcar #'upcase completion-list))
-                               ((string= (substring abbrev 0 1)
-                                         (upcase (substring abbrev 0 1)))
-                                (mapcar #'capitalize completion-list))
-                               (t
-                                (mapcar #'downcase completion-list))))))))
-                (complete-with-action a list s p)))))
-      (list beg end table)))
-
-  (:option completion-at-point-functions (list (cape-capf-debug #'cape-dict)))
+  (:custom completion-at-point-functions '((cape-capf-debug
+                                            #'cape-dict)
+                                           (cape-capf-super
+                                            #'cape-dabbrev
+                                            #'cape-keyword
+                                            #'cape-elisp-block
+                                            #'cape-file
+                                            #'elisp-completion-at-point))
+           cape-dabbrev-min-length 2
+           cape-dabbrev-check-other-buffers t)
 
   (:advice lsp-completion-at-point :around cape-wrap-noninterruptible
            lsp-completion-at-point :around cape-wrap-nonexclusive
            comint-completion-at-point :around cape-wrap-nonexclusive
-           pcomplete-completions-at-point :around cape-wrap-nonexclusive)
-
-  (:hooks emacs-lisp-mode-hook (lambda ()
-                                 (setopt completion-at-point-functions
-                                         (list (cape-capf-super
-                                                #'cape-dabbrev
-                                                #'cape-file
-                                                #'yy/dabbrev-capf
-                                                #'elisp-completion-at-point))
-
-                                         cape-dabbrev-min-length 2
-                                         cape-dabbrev-check-other-buffers t))))
+           pcomplete-completions-at-point :around cape-wrap-nonexclusive))
 
 (setup (:elpaca prescient :host github :repo "radian-software/prescient.el")
+
   (:custom prescient-aggressive-file-save t
            prescient-sort-length-enable nil
            prescient-sort-full-matches-first t
            prescient-history-length 200
            prescient-frequency-decay 1
            prescient-frequency-threshold 0.05)
+
   (:option prescient-persist-mode t))
 
 (setup (:elpaca corfu)

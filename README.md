@@ -4,9 +4,9 @@
 
 ### `module`
 
-对不同语言的支持存放在`site-lisp/lang`目录下，包括汉语与多种编程语言。
+对不同语言的支持存放在`site-lisp/langs`目录下，包括多种编程语言。
 
-对其他工具的扩展存放在`site-lisp/tool`目录下，关于`eww` `hyperbole` `reader`等`module`。
+对其他工具的扩展存放在`site-lisp/tools`目录下，关于`eww` `rime` `reader`等`module`。
 
 ### `lisp`
 

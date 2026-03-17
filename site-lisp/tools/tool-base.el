@@ -63,6 +63,7 @@
            version-control t)
   (:custom find-file-suppress-same-file-warnings t
            find-file-visit-truename t
+           large-file-warning-threshold (* 50 (expt 2 20))
 
            save-abbrevs 'silently
            require-final-newline t))
@@ -129,15 +130,15 @@
            display-line-numbers-widen t))
 
 (setup autorevert
-  (global-auto-revert-mode 1)
+  (global-auto-revert-mode t)
   (:option revert-without-query (list ".")
            auto-revert-stop-on-user-input nil
            auto-revert-mode-text ""
            auto-revert-avoid-polling t
            auto-revert-verbose nil
            auto-revert-remote-files nil)
-  (:init (setopt global-auto-revert-non-file-buffers t
-                 global-auto-revert-ignore-modes '(Buffer-menu-mode))))
+  (:custom global-auto-revert-non-file-buffers t
+           global-auto-revert-ignore-modes '(Buffer-menu-mode)))
 
 (setup feature
 
@@ -201,15 +202,6 @@
 
   (setq-default custom-file (expand-file-name "custom.el" user-emacs-directory))
   (load custom-file :no-error-if-file-is-missing)
-
-  (defun text-mode-enhanced  () (progn (abbrev-mode)
-                                       (visual-line-mode)
-                                       (setopt visual-wrap-extra-indent 2)
-                                       (visual-wrap-prefix-mode)
-                                       (setq-local auto-composition-mode nil
-                                                   text-mode-ispell-word-completion nil)))
-
-  (add-hook 'text-mode-hook #'text-mode-enhanced)
 
   (defun logging-disabled-command (&optional cmd keys)
     (unless cmd (setq cmd this-command))

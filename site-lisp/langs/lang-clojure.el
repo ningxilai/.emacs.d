@@ -13,7 +13,7 @@
            clojure-enable-indent-specs nil))
 
 (setup (:elpaca clojure-ts-mode)
-  (:init (setq clojure-ts-auto-remap nil))
+  (:init (setopt clojure-ts-auto-remap nil))
   (:option clojure-ts-auto-remap nil
            clojure-ts-indent-style 'fixed
            clojure-ts-semantic-indent-rules '(("->" . ((:block 1)))
@@ -26,7 +26,9 @@
   (cl-callf2 rassq-delete-all 'clojure-ts-clojuredart-mode auto-mode-alist)
   (cl-callf2 rassq-delete-all 'clojure-ts-jank-mode auto-mode-alist)
   (cl-callf2 rassq-delete-all 'clojure-ts-joker-mode auto-mode-alist)
-  (:hooks clojure-ts-mode-hook (lambda () (progn (require 'flycheck-clj-kondo) (flycheck-mode 1)))))
+  (:hooks clojure-ts-mode-hook (lambda () (progn (require 'flymake-kondor) (flymake-mode t)))))
+
+(setup (:elpaca flymake-kondor))
 
 (setup (:elpaca cider)
   (:option nrepl-hide-special-buffers t

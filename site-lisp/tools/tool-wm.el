@@ -4,43 +4,33 @@
 
 ;; WM
 
-;; Copy/ by Centaur Emacs ".emacs.d/lisp/init-window.el"
-
-(setup (:elpaca ace-window)
-  (:custom-face
-   aw-leading-char-face ((t (:inherit font-lock-keyword-face :foreground unspecified :bold t :height 3.0)))
-   aw-minibuffer-leading-char-face ((t (:inherit font-lock-keyword-face :bold t :height 1.0)))
-   aw-mode-line-face ((t (:inherit mode-line-emphasis :bold t))))
-  (:global [remap other-window] ace-window
-           "C-x |" split-window-horizontally-instead
-           "C-x _" split-window-vertically-instead)
-  (:hook emacs-startup ace-window-display-mode)
-  (:require ace-window)
-  (:init (defun toggle-window-split ()
+(setup winner
+  (:init (defun transient-winner-undo ()
+           "Transient version of winner-undo."
            (interactive)
-           (if (= (count-windows) 2)
-               (let* ((this-win-buffer (window-buffer))
-                      (next-win-buffer (window-buffer (next-window)))
-                      (this-win-edges (window-edges (selected-window)))
-                      (next-win-edges (window-edges (next-window)))
-                      (this-win-2nd (not (and (<= (car this-win-edges)
-                                                  (car next-win-edges))
-                                              (<= (cadr this-win-edges)
-                                                  (cadr next-win-edges)))))
-                      (splitter
-                       (if (= (car this-win-edges)
-                              (car (window-edges (next-window))))
-                           'split-window-horizontally
-                         'split-window-vertically)))
-                 (delete-other-windows)
-                 (let ((first-win (selected-window)))
-                   (funcall splitter)
-                   (if this-win-2nd (other-window 1))
-                   (set-window-buffer (selected-window) this-win-buffer)
-                   (set-window-buffer (next-window) next-win-buffer)
-                   (select-window first-win)
-                   (if this-win-2nd (other-window 1))))
-             (user-error "`toggle-window-split' only supports two windows")))))
+           (let ((echo-keystrokes nil)
+                 (back (lambda ()
+                         (interactive)
+                         (if tab-bar-mode
+                             (tab-bar-history-back)
+                           (winner-undo))))
+                 (forward (lambda ()
+                            (interactive)
+                            (if tab-bar-mode
+                                (tab-bar-history-forward)
+                              (winner-redo)))))
+             (funcall back)
+             (message "Winner: [u]ndo [r]edo")
+             (set-transient-map
+              (let ((map (make-sparse-keymap)))
+                (define-key map [?u] back)
+                (define-key map [?r] forward)
+                map)
+              t))))
+  (:global "C-c u" transient-winner-undo)
+  (:hooks emacs-startup-hook (lambda () (winner-mode t))))
+
+;; Copy/ by Centaur Emacs ".emacs.d/lisp/init-window.el"
 
 (setup (:elpaca popper)
   (:custom popper-group-function #'popper-group-by-directory
@@ -119,7 +109,7 @@
 
            (defun popper-close-window-hack (&rest _args)
              "Close popper window via `C-g'."
-             (when (and ; (called-interactively-p 'interactive)
+             (when (and        ; (called-interactively-p 'interactive)
                     (not (region-active-p))
                     popper-open-popup-alist)
                (let ((window (caar popper-open-popup-alist))
@@ -134,10 +124,34 @@
                    (delete-window window)))))
            (advice-add #'keyboard-quit :before #'popper-close-window-hack))))
 
+(setup (:elpaca sort-tab :host github :repo "manateelazycat/sort-tab")
+  (:hooks emacs-startup-hook (lambda () (sort-tab-mode t)))
+  (:custom sort-tab-align 'center)
+  (:custom-face sort-tab-current-tab-face
+                ((((background light))
+                  :background "#d5c9c0" :foreground "#282828" :bold t)
+                 (t
+                  :background "#2e3440" :foreground "#fbf1c7" :bold t))
+                sort-tab-other-tab-face
+                ((((background light))
+                  :foreground "#3f3f3f" :bold nil)
+                 (t
+                  :foreground "#bdae93" :bold nil))
+                sort-tab-separator-face
+                ((((background light))
+                  :foreground "#bdae93" :bold t)
+                 (t
+                  :foreground "#665c54" :bold t)))
+  (:global "C-0" sort-tab-close-current-tab
+           "C-1" sort-tab-select-visible-tab
+           "C-2" sort-tab-select-visible-tab
+           "C-3" sort-tab-select-visible-tab
+           "C-4" sort-tab-select-visible-tab))
+
 (setup ibuffer
   (:hooks ibuffer-mode-hook hl-line-mode)
-  (:custom ibuffer-default-sorting-mode 'recency  ;; can use alphabetic
-           ibuffer-use-other-window t                ;; ibuffer in other windows
+  (:custom ibuffer-default-sorting-mode 'recency ;; can use alphabetic
+           ibuffer-use-other-window t ;; ibuffer in other windows
            ibuffer-jump-offer-only-visible-buffers t
            ibuffer-human-readable-size t)
   (:option ibuffer-formats
@@ -148,36 +162,32 @@
              (mark " " (name 16 -1) " " filename)))
   (:bind "C-x C-b" ibuffer))
 
-(setup wm ;; Author: Per Vognsen <per.vognsen@gmail.com>
+(defun toggle-window-split () ;; copy by emacswiki
+  (interactive)
+  (if (= (count-windows) 2)
+      (let* ((this-win-buffer (window-buffer))
+             (next-win-buffer (window-buffer (next-window)))
+             (this-win-edges (window-edges (selected-window)))
+             (next-win-edges (window-edges (next-window)))
+             (this-win-2nd (not (and (<= (car this-win-edges)
+                                         (car next-win-edges))
+                                     (<= (cadr this-win-edges)
+                                         (cadr next-win-edges)))))
+             (splitter
+              (if (= (car this-win-edges)
+                     (car (window-edges (next-window))))
+                  'split-window-horizontally
+                'split-window-vertically)))
+        (delete-other-windows)
+        (let ((first-win (selected-window)))
+          (funcall splitter)
+          (if this-win-2nd (other-window 1))
+          (set-window-buffer (selected-window) this-win-buffer)
+          (set-window-buffer (next-window) next-win-buffer)
+          (select-window first-win)
+          (if this-win-2nd (other-window 1))))))
 
-  (:init(defun toggle-window-split () ;; copy by emacswiki
-          (interactive)
-          (if (= (count-windows) 2)
-              (let* ((this-win-buffer (window-buffer))
-                     (next-win-buffer (window-buffer (next-window)))
-                     (this-win-edges (window-edges (selected-window)))
-                     (next-win-edges (window-edges (next-window)))
-                     (this-win-2nd (not (and (<= (car this-win-edges)
-                                                 (car next-win-edges))
-                                             (<= (cadr this-win-edges)
-                                                 (cadr next-win-edges)))))
-                     (splitter
-                      (if (= (car this-win-edges)
-                             (car (window-edges (next-window))))
-                          'split-window-horizontally
-                        'split-window-vertically)))
-                (delete-other-windows)
-                (let ((first-win (selected-window)))
-                  (funcall splitter)
-                  (if this-win-2nd (other-window 1))
-                  (set-window-buffer (selected-window) this-win-buffer)
-                  (set-window-buffer (next-window) next-win-buffer)
-                  (select-window first-win)
-                  (if this-win-2nd (other-window 1))))))
-        (global-set-key (kbd "C-x t") 'toggle-window-split))
-
-  (:load wm :dirs ("site-lisp/tools/wm/"))
-  (:hooks emacs-startup-hook wm-mode))
+(global-set-key (kbd "C-x t") 'toggle-window-split)
 
 (provide 'tool-wm)
 

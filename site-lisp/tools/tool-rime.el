@@ -6,7 +6,6 @@
 
 (setup (:elpaca rime :host github :repo "DogLooksGood/emacs-rime")
   (:option rime-librime-root "~/.local/src/librime/build/"
-           rime-user-data-dir "~/.config/rime"
            default-input-method "rime")
   (:custom rime-show-candidate 'minibuffer
            rime-disable-predicates '(rime-predicate-after-alphabet-char-p
@@ -32,5 +31,5 @@
                                           input-method-cursor-color
                                         default-cursor-color)))))))
 
-(provide 'lang-chinese)
-;;; lang-chinese.el ends here
+(provide 'tool-rime)
+;;; tool-rime.el ends here

@@ -7,8 +7,8 @@
 (setup (:elpaca latex-change-env))
 
 (setup LaTeX-mode (:elpaca auctex :host github :repo "emacs-straight/auctex" :branch "master")
+       (:mode ("\\.tex" "\\.stex" "\\.texi"))
        (:option TeX-PDF-mode t
-                TeX-view-program-list '(("PDF Tools" TeX-pdf-tools-sync-view))
                 TeX-view-program-selection '((output-pdf "PDF Tools"))
                 TeX-output-view-style '(("^pdf$" "." "xpdf %o %(outpage)"))
 
@@ -17,7 +17,6 @@
                 TeX-show-compilation t
                 TeX-electric-math '("$" . "$")
                 TeX-electric-sub-and-superscript t
-                LaTeX-babel-hyphen nil
                 LaTeX-indent-level 4
                 LaTeX-item-indent 0
                 LaTeX-math-mode t
@@ -26,17 +25,15 @@
                 ;; "latex -shell-escape --synctex=1"
                 TeX-command-default "XeLaTeX"
 
-                TeX-command-list '("xelatex" "%`xelatex --synctex=1%(mode)%' %t" tex-run-tex nil t)
-
                 TeX-master nil
                 TeX-engine 'xetex
                 TeX-source-correlate-start-server t
                 TeX-source-correlate-mode t
                 TeX-source-correlate-method '((dvi . source-specials)
                                               (pdf . synctex)))
-
-       (add-to-list 'auto-mode-alist '("\\.tex" "\\.stex" "\\.texi" . bibtex-mode))
-       ;; (add-to-list 'TeX-command-list '("xelatex" "%`xelatex --synctex=1%(mode)%' %t" tex-run-tex nil t))
+       (:require latex)
+       (add-to-list 'TeX-command-list '("xelatex" "%`xelatex --synctex=1%(mode)%' %t" tex-run-tex nil t))
+       (add-to-list 'TeX-view-program-list '("PDF Tools" TeX-pdf-tools-sync-view))
 
        (:hooks LaTeX-mode-hook turn-on-reftex
                tex-after-compilation-finished-functions #'tex-revert-document-buffer)
@@ -46,9 +43,9 @@
                                             (visual-line-mode)
                                             (auto-fill-mode))))
 
-       (:with-map latex-mode-map (:bind "C-c r" latex-change-env))
+       (:with-map latex-mode-map (:bind "C-c r" latex-change-env
+                                        "C-c C-g" pdf-sync-forward-search))
 
-       (:with-map latex-mode-map (:bind "C-c C-g" pdf-sync-forward-search))
 
        (defun move-line-region-down (arg)
          "Move region (transient-mark-mode active) or current line
@@ -115,22 +112,23 @@
   (:hooks LaTeX-mode-hook turn-on-cdlatex))
 
 (setup (:elpaca laas)
-  (:hooks LaTeX-mode-hook (lambda () (aas-set-snippets 'laas-mode
-                                                  ;; set condition!
-                                                  :cond #'texmathp ; expand only while in math
-                                                  "supp" "\\supp"
-                                                  "On" "O(n)"
-                                                  "O1" "O(1)"
-                                                  "Olog" "O(\\log n)"
-                                                  "Olon" "O(n \\log n)"
-                                                  ;; bind to functions!
-                                                  "Sum" (lambda () (interactive)
-                                                         (yas-expand-snippet "\\sum_{$1}^{$2} $0"))
-                                                  "Span" (lambda () (interactive)
-                                                          (yas-expand-snippet "\\Span($1)$0"))
-                                                  ;; add accent snippets
-                                                  :cond #'laas-object-on-left-condition
-                                                  "qq" (lambda () (interactive) (laas-wrap-previous-object "sqrt")))))
+  (:require laas)
+  (aas-set-snippets 'laas-mode
+    ;; set condition!
+    :cond #'texmathp    ; expand only while in math
+    "supp" "\\supp"
+    "On" "O(n)"
+    "O1" "O(1)"
+    "Olog" "O(\\log n)"
+    "Olon" "O(n \\log n)"
+    ;; bind to functions!
+    "Sum" (lambda () (interactive)
+            (yas-expand-snippet "\\sum_{$1}^{$2} $0"))
+    "Span" (lambda () (interactive)
+             (yas-expand-snippet "\\Span($1)$0"))
+    ;; add accent snippets
+    :cond #'laas-object-on-left-condition
+    "qq" (lambda () (interactive) (laas-wrap-previous-object "sqrt")))
   (:option laas-enable-auto-space nil))
 
 ;; # -*- mode: snippet -*-
@@ -176,25 +174,22 @@
 
 (setup (:elpaca pdf-tools)
   (pdf-tools-install :no-query)
-  (:option pdf-sync-backward-display-action t
-           pdf-sync-forward-display-action t)
-  (:custom doc-view-continuous t
-           doc-view-resolution 144
-           large-file-warning-threshold (* 50 (expt 2 20))
-
-           pdf-view-use-scaling t
-           pdf-view-use-imagemagick t
+  (:option pdf-annot-activate-created-annotations t)
+  (:custom pdf-view-use-scaling t
+           pdf-view-use-imagemagick nil
            pdf-view-resize-factor 1.1
            pdf-view-display-size 'fit-page ;; 'fit-width
-           pdf-annot-activate-created-annotations t)
-  (:hooks pdf-view-mode-hook (lambda () (progn (line-number-mode nil)
+           )
+  (:hooks pdf-sync-minor-mode-hook (lambda () (setq pdf-sync-backward-display-action '(nil . ((inhibit-same-window . t)))
+                                               pdf-sync-forward-display-action '(nil . ((inhibit-same-window . t)))))
+          pdf-view-mode-hook (lambda () (progn (line-number-mode nil)
                                           (pdf-view-themed-minor-mode)
                                           (pdf-view-auto-slice-minor-mode)
                                           (pdf-isearch-minor-mode)))))
 
 (setup bibtex
 
-  (add-to-list 'auto-mode-alist '("\\.tex" "\\.stex" "\\.texi" "\\.bib" . bibtex-mode))
+  (:mode ("\\.bib"))
 
   (defun get-bibtex-from-doi (doi)
     "Get a BibTeX entry from the DOI"
@@ -202,8 +197,8 @@
     (let ((url-mime-accept-string "text/bibliography;style=bibtex"))
       (with-current-buffer
           (url-retrieve-synchronously
-           (format "http://dx.doi.org/%s"
-                   (replace-regexp-in-string "http://dx.doi.org/" "" doi)))
+           (format "https://dx.doi.org/%s"
+                   (replace-regexp-in-string "https://dx.doi.org/" "" doi)))
         (switch-to-buffer (current-buffer))
         (goto-char (point-max))
         (setq bibtex-entry
@@ -226,17 +221,16 @@
 
   (:custom bibtex-dialect 'biblatex
            bibtex-align-at-equal-sign t
+           bibtex-text-indentation 20
            bibtex-user-optional-fields '(("keywords" "Keywords to describe the entry" "")
-                                         ("file"     "Relative or absolute path to attachments" "" )))
-
-  (:hooks bibtex-mode-hook (lambda () (get-bibtex-from-doi nil))))
+                                         ("file"     "Relative or absolute path to attachments" "" ))))
 
 (setup reftex
   (eval-after-load 'reftex '(reftex-isearch-minor-mode))
   (:option reftex-cite-prompt-optional-args t   ; Prompt for empty optional arguments in cite
            reftex-cite-format 'biblatex
            reftex-plug-into-AUCTeX t
-           reftex-insert-label-flags t
+           reftex-insert-label-flags '("e" "equ")
            reftex-save-parse-info t
            reftex-enable-partial-scans t
            reftex-use-multiple-selection-buffers t))

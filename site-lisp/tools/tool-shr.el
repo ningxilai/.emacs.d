@@ -4,7 +4,7 @@
 
 ;; shr.el
 
-(setup (:elpaca ekp :host github :repo "Kinneyzhang/emacs-kp" :file (:default "*.el" "dictionaries"))
+(setup (:elpaca ekp :host github :repo "Kinneyzhang/emacs-kp" :files (:default "*.el" "dictionaries"))
   (:require ekp-utils ekp-hyphen ekp)
   (ekp-c-module-load)
   (:custom ekp-latin-lang "en_US")
