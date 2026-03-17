@@ -6,7 +6,15 @@
 
 (require 'cl-lib)
 
-;; State machine state structure
+;; Window structure using cl-defstruct (kept for compatibility)
+(cl-defstruct wm-window
+  (buffer nil)
+  (point 0)
+  (start 0)
+  (hscroll 0)
+  (dedicated nil))
+
+;; State machine state structure using cl-defstruct
 (cl-defstruct wm-state
   (windows nil :type list)
   (focus 0 :type integer)
@@ -19,14 +27,6 @@
              wm-layout-bisection
              wm-layout-fullscreen))
   (window-map nil :type list))  ; maps emacs windows to wm indices
-
-;; Window structure
-(cl-defstruct wm-window
-  (buffer nil)
-  (point 0)
-  (start 0)
-  (hscroll 0)
-  (dedicated nil))
 
 ;; Current state instance
 (defvar wm-state-instance nil)
@@ -54,9 +54,9 @@
 
 ;; State operations
 (defun wm-state-update-windows (state)
-  (setf (wm-state-windows state)
+  (aset state 1
         (mapcar #'wm-window-from-emacs-window (wm-emacs-windows)))
-  (setf (wm-state-window-map state) nil)
+  (aset state 7 nil)
   (cl-loop for i from 0
            for window in (wm-emacs-windows)
            do (push (cons window i) (wm-state-window-map state))))
@@ -65,7 +65,7 @@
   (let* ((selected (selected-window))
          (kv (assoc selected (wm-state-window-map state))))
     (when kv
-      (setf (wm-state-focus state) (cdr kv)))))
+      (aset state 2 (cdr kv)))))
 
 (defun wm-state-reset-layout ()
   (delete-other-windows)
@@ -77,7 +77,7 @@
   (wm-state-reset-layout)
   (let ((state wm-state-instance))
     (wm-restore-window (nth (wm-state-focus state) (wm-state-windows state)))
-    (setf (wm-state-window-map state)
+    (aset state 7
           (list (cons (selected-window) (wm-state-focus state))))))
 
 (defun wm-layout-grid ()
@@ -106,7 +106,7 @@
 
     (balance-windows)
     (other-window (wm-state-focus state))
-    (setf (wm-state-window-map state)
+    (aset state 7
           (cl-loop for window in (wm-emacs-windows)
                    for i from 0
                    collect (cons window i)))))
@@ -122,7 +122,7 @@
         (other-window 1)))
     (other-window (1+ (wm-state-focus state)))
     (balance-windows)
-    (setf (wm-state-window-map state)
+    (aset state 7
           (cl-loop for window in (wm-emacs-windows)
                    for i from 0
                    collect (cons window i)))))
@@ -144,7 +144,7 @@
                         (other-window 1))))
         (balance-windows)
         (other-window (1+ (wm-state-focus state))))
-      (setf (wm-state-window-map state)
+      (aset state 7
             (cl-loop for window in (wm-emacs-windows)
                      for i from 0
                      collect (cons window i))))))
@@ -166,7 +166,7 @@
                         (other-window 1))))
         (balance-windows)
         (other-window (1+ (wm-state-focus state))))
-      (setf (wm-state-window-map state)
+      (aset state 7
             (cl-loop for window in (wm-emacs-windows)
                      for i from 0
                      collect (cons window i))))))
@@ -201,7 +201,7 @@
 (defun wm-cycle-layout ()
   (interactive)
   (let ((state wm-state-instance))
-    (setf (wm-state-layout state)
+    (aset state 3
           (mod (1+ (wm-state-layout state)) (length (wm-state-layouts state))))
     (wm-update-layout)))
 
@@ -211,7 +211,7 @@
     (wm-state-update-windows state)
     (wm-state-update-focus state)
     (if (assoc (selected-window) (wm-state-window-map state))
-        (setf (wm-state-focus state)
+        (aset state 2
               (mod (1+ (wm-state-focus state)) (length (wm-state-windows state))))
       (other-window 1)
       (wm-state-update-focus state))
@@ -226,7 +226,7 @@
         (progn
           (decf (wm-state-focus state))
           (when (< (wm-state-focus state) 0)
-            (setf (wm-state-focus state) (1- (length (wm-state-windows state))))))
+            (aset state 2 (1- (length (wm-state-windows state))))))
       (other-window -1)
       (wm-state-update-focus state))
     (wm-update-layout)))
@@ -241,8 +241,8 @@
   (let* ((state wm-state-instance)
          (windows (wm-state-windows state)))
     (when (and (> (length windows) 1) (< n (length windows)))
-      (setf (wm-state-windows state) (wm-remove-nth n windows))
-      (setf (wm-state-window-map state) nil)
+      (aset state 1 (wm-remove-nth n windows))
+      (aset state 7 nil)
       (when (= (wm-state-focus state) (length (wm-state-windows state)))
         (decf (wm-state-focus state))))
     (wm-update-layout)))
@@ -256,9 +256,9 @@
   (let ((state wm-state-instance))
     (wm-state-update-focus state)
     (wm-state-update-windows state)
-    (setf (wm-state-windows state)
+    (aset state 1
           (wm-insert-nth (wm-state-windows state) n window))
-    (setf (wm-state-window-map state) nil)
+    (aset state 7 nil)
     (when (>= (wm-state-focus state) n)
       (incf (wm-state-focus state)))
     (wm-update-layout)))
@@ -268,10 +268,10 @@
   (let ((state wm-state-instance))
     (wm-state-update-focus state)
     (wm-state-update-windows state)
-    (setf (wm-state-windows state)
+    (aset state 1
           (append (wm-state-windows state)
                   (list (wm-window-from-emacs-window (selected-window)))))
-    (setf (wm-state-window-map state) nil)
+    (aset state 7 nil)
     (wm-update-layout)))
 
 (defun wm-insert-window ()
@@ -311,7 +311,7 @@
     (when (< (1+ (wm-state-focus state)) (length (wm-state-windows state)))
       (cl-rotatef (nth (wm-state-focus state) (wm-state-windows state))
                   (nth (1+ (wm-state-focus state)) (wm-state-windows state)))
-      (setf (wm-state-window-map state) nil)
+      (aset state 7 nil)
       (incf (wm-state-focus state)))
     (wm-update-layout)))
 
@@ -323,7 +323,7 @@
     (when (> (wm-state-focus state) 0)
       (cl-rotatef (nth (wm-state-focus state) (wm-state-windows state))
                   (nth (1- (wm-state-focus state)) (wm-state-windows state)))
-      (setf (wm-state-window-map state) nil)
+      (aset state 7 nil)
       (decf (wm-state-focus state)))
     (wm-update-layout)))
 
@@ -334,7 +334,7 @@
     (wm-state-update-windows state)
     (wm-push-window)
     (wm-delete-window)
-    (setf (wm-state-focus state) (1- (length (wm-state-windows state))))
+    (aset state 2 (1- (length (wm-state-windows state))))
     (wm-update-layout)))
 
 (defun wm-move-window-to-front ()
@@ -343,14 +343,14 @@
     (wm-state-update-windows state)
     (wm-insert (wm-window-from-emacs-window (selected-window)) 0)
     (wm-delete-window)
-    (setf (wm-state-focus state) 0)
+    (aset state 2 0)
     (wm-update-layout)))
 
 (defun wm-focus-window (n)
   (interactive "p")
   (let ((state wm-state-instance))
     (when (< n (length (wm-state-windows state)))
-      (setf (wm-state-focus state) n))
+      (aset state 2 n))
     (wm-update-layout)))
 
 (defun wm-manage-windows ()
@@ -359,20 +359,20 @@
     (setq wm-state-instance (make-wm-state)))
   (let ((state wm-state-instance)
         (emacs-windows (wm-emacs-windows)))
-    (setf (wm-state-focus state)
+    (aset state 2
           (or (cl-position (selected-window) emacs-windows) 0))
-    (setf (wm-state-windows state)
+    (aset state 1
           (mapcar #'wm-window-from-emacs-window emacs-windows))
-    (setf (wm-state-window-map state) nil)
+    (aset state 7 nil)
     (wm-update-layout)))
 
 ;; Workspace management
 (defun wm-restore-workspace (layout focus windows)
   (let ((state wm-state-instance))
-    (setf (wm-state-layout state) layout)
-    (setf (wm-state-focus state) focus)
-    (setf (wm-state-windows state) windows)
-    (setf (wm-state-window-map state) nil)
+    (aset state 3 layout)
+    (aset state 2 focus)
+    (aset state 1 windows)
+    (aset state 7 nil)
     (wm-update-layout)))
 
 (defun wm-save-workspace (workspace)
@@ -395,7 +395,7 @@
                                   (list (wm-window-from-emacs-window (selected-window)))))
             (wm-state-workspaces state)))
     (let ((state-data (cdr (assoc workspace (wm-state-workspaces state)))))
-      (setf (wm-state-workspace state) workspace)
+      (aset state 4 workspace)
       (wm-restore-workspace (cl-first state-data) (cl-second state-data) (cl-third state-data)))))
 
 ;; Mode definition

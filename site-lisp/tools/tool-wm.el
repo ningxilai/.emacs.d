@@ -162,32 +162,48 @@
              (mark " " (name 16 -1) " " filename)))
   (:bind "C-x C-b" ibuffer))
 
-(defun toggle-window-split () ;; copy by emacswiki
-  (interactive)
-  (if (= (count-windows) 2)
-      (let* ((this-win-buffer (window-buffer))
-             (next-win-buffer (window-buffer (next-window)))
-             (this-win-edges (window-edges (selected-window)))
-             (next-win-edges (window-edges (next-window)))
-             (this-win-2nd (not (and (<= (car this-win-edges)
-                                         (car next-win-edges))
-                                     (<= (cadr this-win-edges)
-                                         (cadr next-win-edges)))))
-             (splitter
-              (if (= (car this-win-edges)
-                     (car (window-edges (next-window))))
-                  'split-window-horizontally
-                'split-window-vertically)))
-        (delete-other-windows)
-        (let ((first-win (selected-window)))
-          (funcall splitter)
-          (if this-win-2nd (other-window 1))
-          (set-window-buffer (selected-window) this-win-buffer)
-          (set-window-buffer (next-window) next-win-buffer)
-          (select-window first-win)
-          (if this-win-2nd (other-window 1))))))
-
-(global-set-key (kbd "C-x t") 'toggle-window-split)
+(setup wm
+  (:load wm :dirs ("site-lisp/tools/wm/"))
+  (:require wm)
+  (wm-mode)
+  (defun wm-toggle-window-split ()
+    "Toggle the window split direction for the current window and its neighbor.
+This function is adapted from emacswiki and integrates with wm state management.
+It only works when exactly two windows are visible."
+    (interactive)
+    (if (= (count-windows) 2)
+        (let* ((this-win-buffer (window-buffer))
+               (next-win-buffer (window-buffer (next-window)))
+               (this-win-edges (window-edges (selected-window)))
+               (next-win-edges (window-edges (next-window)))
+               (this-win-2nd (not (and (<= (car this-win-edges)
+                                           (car next-win-edges))
+                                       (<= (cadr this-win-edges)
+                                           (cadr next-win-edges)))))
+               (splitter
+                (if (= (car this-win-edges)
+                       (car next-win-edges))
+                    'split-window-horizontally
+                  'split-window-vertically)))
+          (delete-other-windows)
+          (let ((first-win (selected-window)))
+            (funcall splitter)
+            (if this-win-2nd (other-window 1))
+            (set-window-buffer (selected-window) this-win-buffer)
+            (set-window-buffer (next-window) next-win-buffer)
+            (select-window first-win)
+            (if this-win-2nd (other-window 1)))
+          ;; Update wm state to reflect the new window configuration
+          (when (and (boundp 'wm-mode) wm-mode)
+            (let ((state wm-state-instance))
+              (when state
+                ;; Use aset to avoid (setf ...) issues
+                (aset state 1 (mapcar #'wm-window-from-emacs-window (wm-emacs-windows)))
+                (aset state 7 nil)
+                (wm-state-update-focus state)
+                (wm-display-status)))))
+      (message "Can only toggle split with exactly 2 windows.")))
+  (:bind "C-!" wm-toggle-window-split))
 
 (provide 'tool-wm)
 
