@@ -8,51 +8,34 @@
 
   (:option org-todo-keywords
            '((sequence
-              "TODO(t)"  ; A task that needs doing & is ready to do
-              "PROJ(p)"  ; A project, which usually contains other tasks
-              "LOOP(r)"  ; A recurring task
-              "STRT(s)"  ; A task that is in progress
-              "WAIT(w)"  ; Something external is holding up this task
-              "HOLD(h)"  ; This task is paused/on hold because of me
-              "IDEA(i)"  ; An unconfirmed and unapproved task or notion
+              "TODO(t)"     ; A task that needs doing & is ready to do
+              "PROJ(p)" ; A project, which usually contains other tasks
+              "LOOP(r)" ; A recurring task
+              "STRT(s)" ; A task that is in progress
+              "WAIT(w)" ; Something external is holding up this task
+              "HOLD(h)" ; This task is paused/on hold because of me
+              "IDEA(i)" ; An unconfirmed and unapproved task or notion
               "INITIATED(I)"
               "WAITING(w)"
               "SOMEDAY(smd)"
               "|"
-              "DONE(d)"  ; Task successfully completed
+              "DONE(d)"                 ; Task successfully completed
               "CANCELLED(c)"
               "KILL(k)") ; Task was cancelled, aborted, or is no longer applicable
              (sequence
-              "[ ](T)"   ; A task that needs doing
-              "[-](S)"   ; Task is in progress
-              "[?](W)"   ; Task is being held up or paused
+              "[ ](T)"               ; A task that needs doing
+              "[-](S)"               ; Task is in progress
+              "[?](W)"               ; Task is being held up or paused
               "|"
-              "[X](D)")  ; Task was completed
+              "[X](D)")                 ; Task was completed
              (sequence
               "|"
               "OKAY(o)"
               "YES(y)"
               "NO(n)"))
-           org-todo-keyword-faces
-           '(("[-]"  . org-todo-active)
-             ("STRT" . org-todo-active)
-             ("[?]"  . org-todo-onhold)
-             ("WAIT" . org-todo-onhold)
-             ("HOLD" . org-todo-onhold)
-             ("PROJ" . org-todo-project)
-             ("NO"   . org-todo-cancel)
-             ("KILL" . org-todo-cancel)))
-
-  (:hooks org-after-refile-insert (lambda ()
-                                    (when (bound-and-true-p org-capture-is-refiling)
-                                      (save-buffer)))
-          org-capture-mode (lambda ()
-                             (setq header-line-format
-                                   (format "%s%s%s"
-                                           (propertize (abbreviate-file-name (buffer-file-name (buffer-base-buffer)))
-                                                       'face 'font-lock-string-face)
-                                           org-eldoc-breadcrumb-separator
-                                           header-line-format))))
+           org-entities-user
+           '(("flat"  "\\flat" nil "" "" "266D" "♭")
+             ("sharp" "\\sharp" nil "" "" "266F" "♯")))
 
   (:custom org-emphasis-alist
            '(("*" bold)
@@ -62,148 +45,34 @@
              ("~" org-emphasis-code org-code verbatim)
              ("+" (:strike-through t)))
 
-           org-directory "etc/org"
-           org-id-locations-file '(expand-file-name ".orgids" org-directory)
-           org-list-allow-alphabetical t
-
-           calendar-week-start-day t ;; test
-           org-agenda-files (list org-directory)
-           org-agenda-deadline-faces
-           '((1.001 . error)
-             (1.0 . org-warning)
-             (0.5 . org-upcoming-deadline)
-             (0.0 . org-upcoming-distant-deadline))
-           ;; Don't monopolize the whole frame just for the agenda
-           org-agenda-window-setup 'current-window
-           org-agenda-skip-unavailable-files t
-           org-agenda-span 10
-           org-agenda-start-on-weekday nil
-           org-agenda-start-with-log-mode t
-           org-agenda-start-day "-3d"
-           org-agenda-inhibit-startup t
-           org-agenda-tags-column 0
-
-           org-agenda-custom-commands
-           '(("P"
-              "List of all projects"
-              tags
-              "LEVEL=2/PROJ")
-
-             ("E"
-              "Agenda, next actions and waiting"
-              ((agenda "" ((org-agenda-overriding-header "Next three days:")
-                           (org-agenda-span 3)
-                           (org-agenda-start-on-weekday nil)))
-               (todo "NEXT" ((org-agenda-overriding-header "Next Actions:")))
-               (todo "WAIT" ((org-agenda-overriding-header "Waiting:")))
-               )))
-
-           org-modules '(ol-doi ol-w3m ol-bbdb ol-bibtex ol-docview ol-gnus ol-info ol-irc ol-mhe ol-rmail ol-eww)
-           org-export-backends '(ascii html latex man md odt texinfo)
-           org-export-with-sub-superscripts nil
-
-           org-fontify-inline-src-blocks t
-           org-fontify-todo-headline t
-           org-fontify-quote-and-verse-blocks t
-           org-fontify-whole-block-delimiter-line t
-           org-fontify-whole-heading-line t
-           org-fontify-done-headline t
-
-           org-hide-emphasis-markers t
-           org-hide-leading-stars t
-           org-hide-macro-markers t
-           org-hide-block-startup nil
-
-           org-pretty-entities t
-           org-pretty-entities-include-sub-superscripts nil
-           org-support-shift-select t
-           org-startup-folded 'showeverything
-           org-startup-with-inline-images t
-           org-startup-indented nil
-           org-startup-tuncated t
-           org-use-sub-superscripts '{}
-
-           org-refile-targets
-           '((nil :maxlevel . 3)
-             (org-agenda-files :maxlevel . 3)
-             org-refile-use-outline-path 'file
-             org-outline-path-complete-in-steps nil)
-
-           org-entities-user
-           '(("flat"  "\\flat" nil "" "" "266D" "♭")
-             ("sharp" "\\sharp" nil "" "" "266F" "♯"))
-
            org-auto-align-tags nil
            org-special-ctrl-a/e t
            org-insert-heading-respect-content t
-
-           org-src-preserve-indentation nil ; use native major-mode indentation
-           org-src-window-setup 'current-window
-           org-src-tab-acts-natively nil ; we do this ourselves
-
+           org-use-sub-superscripts '{}
+           org-support-shift-select t
            org-ellipsis "…"
            org-tags-column 0
-           org-log-into-drawer t
-           org-log-done 'time
            org-image-actual-width '(800)
-           org-catch-invisible-edits 'showeverything ;; 'show-and-error
-           org-fold-catch-invisible-edits 'show
-           ;; org-indent-mode-turns-on-hiding-stars nil
-
-           org-archive-subtree-save-file-p t
-           org-num-skip-tags '("export" "nonum")
-
            org-effort-property "EFFORT"
-           org-id-locations-file-relative t
-           org-id-link-to-org-use-id t
-           org-display-remote-inline-images 'download ; TRAMP urls
-
-           org-export-with-drawers nil
-           org-export-with-todo-keywords nil
-           org-export-with-toc nil
-           org-export-with-smart-quotes t
-           org-export-date-timestamp-format "%e %B %Y"
-
-           org-html-validation-link nil
-
            org-indirect-buffer-display 'new-frame
            org-enforce-todo-dependencies t
-
-           org-columns-default-format
-           "%50ITEM(Task) %10CLOCKSUM %16TIMESTAMP_IA"
-
-           org-imenu-depth 4
-           org-priority-faces
-           '((?A . error)
-             (?B . warning)
-             (?C . shadow))
-
-           org-format-latex-options '(:foreground default :background "Transparent" :scale 1.0 :html-foreground auto :html-background "Transparent" :html-scale 1.0 :matchers ("begin" "$1" "$" "$$" "\\(" "\\["))
-           org-highlight-latex-and-related '(native latex script entities)
+           org-columns-default-format "%50ITEM(Task) %10CLOCKSUM %16TIMESTAMP_IA"
+           org-directory "etc/org"
+           org-agenda-files (list org-directory)
+           org-modules '(ol-doi ol-w3m ol-bbdb ol-bibtex ol-docview ol-gnus ol-info ol-irc ol-mhe ol-rmail ol-eww)
+           org-export-backends '(ascii html latex man md odt texinfo)
            org-image-actual-width nil ;; '450
-           org-latex-prefer-user-labels t
-           org-latex-compiler "xelatex"
-           org-latex-listings 'minted
-
-           org-latex-src-block-backend 'minted
-
-           org-latex-packages-alist '(("" "color")
-                                      ("" "minted")
-                                      ("" "parskip")
-                                      ("" "tikz")
-                                      ("" "amsfonts")
-                                      ("" "amsmath")
-                                      ("" "amsthm")
-                                      ("fontset=macnew,UTF8" "ctex"))
-           org-latex-pdf-process
-           (if (executable-find "latexmk")
-               '("latexmk -shell-escape -bibtex -f -pdf -%latex -interaction=nonstopmode -output-directory=%o %f")
-             '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
-               "pdflatex -interaction nonstopmode -output-directory %o %f"
-               "bibtex %b"))
-
-           org-latex-prefer-user-labels t
-           org-startup-with-latex-preview nil
+           org-format-latex-options '(:foreground default
+                                                  :background "Transparent"
+                                                  :scale 1.0
+                                                  :html-foreground auto
+                                                  :html-background "Transparent"
+                                                  :html-scale 1.0
+                                                  :matchers ("begin" "$1" "$" "$$" "\\(" "\\["))
+           org-highlight-latex-and-related '(native
+                                             latex
+                                             script
+                                             entities)
            org-preview-latex-default-process 'dvisvgm
            org-preview-latex-process-alist '((dvisvgm :programs
                                                       ("xelatex" "dvisvgm")
@@ -229,15 +98,99 @@
                                                           ("xelatex -interaction nonstopmode -output-directory %o %f")
                                                           :image-converter
                                                           ("convert -density %D -trim -antialias %f -quality 100 %O")))
+           org-latex-packages-alist '(("" "color")
+                                      ("" "minted")
+                                      ("" "parskip")
+                                      ("" "tikz")
+                                      ("" "amsfonts")
+                                      ("" "amsmath")
+                                      ("" "amsthm")
+                                      ("fontset=macnew,UTF8" "ctex"))
 
-           ;; pdflatex is not very efficient, but only pdflatex supports tikz
+           org-fontify-whole-block-delimiter-line t
+           org-fontify-whole-heading-line t
+           org-fontify-todo-headline t
+           org-fontify-done-headline t
 
+           org-hide-emphasis-markers t
+           org-hide-leading-stars t
+           org-hide-macro-markers t
+           org-hide-block-startup nil
+
+           org-startup-folded 'showeverything
+           org-startup-with-inline-images t
+           org-startup-indented nil
+           org-startup-tuncated t
+           org-startup-with-latex-preview nil
+
+           org-pretty-entities t
+           org-pretty-entities-include-sub-superscripts nil
+
+           org-log-into-drawer t
+           org-log-done 'time)
+
+  (:hooks org-after-refile-insert-hook (lambda () (when (bound-and-true-p org-capture-is-refiling) (save-buffer)))
+          org-capture-mode-hook (lambda () (setq-local header-line-format
+                                                  (format "%s%s%s"
+                                                          (propertize (abbreviate-file-name (buffer-file-name (buffer-base-buffer)))
+                                                                      'face 'font-lock-string-face)
+                                                          org-eldoc-breadcrumb-separator
+                                                          header-line-format)))
+          org-mode-hook (lambda () (when (bound-and-true-p LaTeX-mode) (turn-on-org-cdlatex))))
+
+  (:bind "C-S-<left>" windower-move-border-left
+         "C-S-<right>" windower-move-border-right
+         "C-S-<up>" windower-move-border-above
+         "C-S-<down>" windower-move-border-below))
+
+(setup ob-latex
+  (:custom org-babel-latex-preamble
+           (lambda (_)
+             "\\documentclass{standalone}")
+           org-babel-latex-pdf-svg-process
+           "inkscape \
+-n 1 \
+--pdf-poppler \
+--export-area-drawing \
+--export-text-to-path \
+--export-plain-svg \
+--export-filename=%O \
+%f"
+           org-babel-default-header-args:latex
+           '((:results . "file raw")
+             (:exports . "results")
+             (:eval . "never-export")
+             (:file . (lambda ()
+                        (let* ((elt (org-element-at-point))
+                               (name (org-element-property :name elt))
+                               (cap (org-export-get-caption elt))
+                               (sha (concat (sha1 (org-element-property :value elt)))))
+                          (concat (or name cap )
+                                  ".svg"))))))
+  (:hooks org-babel-after-execute-hook org-redisplay-inline-images))
+
+(setup ox
+  (:option org-export-with-sub-superscripts nil)
+  (:custom org-export-with-drawers nil
+           org-export-with-todo-keywords nil
+           org-export-with-toc nil
+           org-export-with-smart-quotes t
+           org-export-date-timestamp-format "%e %B %Y"))
+
+(setup ox-latex
+  (:custom org-latex-compiler "xelatex"
+           org-latex-prefer-user-labels t
+           org-latex-pdf-process
+           (if (executable-find "latexmk")
+               '("latexmk -shell-escape -bibtex -f -pdf -%latex -interaction=nonstopmode -output-directory=%o %f")
+             '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+               "pdflatex -interaction nonstopmode -output-directory %o %f"
+               "bibtex %b"))
            org-latex-logfiles-extensions
            '("lof" "lot" "tex~" "aux" "idx" "log" "out"
              "toc" "nav" "snm" "vrb" "dvi" "fdb_latexmk"
              "blg" "brf" "fls" "entoc" "ps" "spl" "bbl"
              "tex" "bcf")
-
            org-latex-classes
            '(("ews"
               "\\documentclass[11pt, twoside, hidelinks]{memoir}
@@ -300,50 +253,154 @@
               ("\\chapter{%s}" . "\\chapter*{%s}")
               ("\\section{%s}" . "\\section*{%s}")
               ("\\subsection{%s}" . "\\subsection*{%s}")
-              ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
+              ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))))
 
-  (:hook turn-on-org-cdlatex)
+(setup ox-html
+  (:custom org-html-validation-link nil))
 
-  (:bind "C-S-<left>" windower-move-border-left
-         "C-S-<right>" windower-move-border-right
-         "C-S-<up>" windower-move-border-above
-         "C-S-<down>" windower-move-border-below))
-
-(setup ob-latex
-  (:custom org-babel-latex-preamble
-           (lambda (_)
-             "\\documentclass{standalone}")
-           org-babel-latex-pdf-svg-process
-           "inkscape \
--n 1 \
---pdf-poppler \
---export-area-drawing \
---export-text-to-path \
---export-plain-svg \
---export-filename=%O \
-%f"
-           org-babel-default-header-args:latex
-           '((:results . "file raw")
-             (:exports . "results")
-             (:eval . "never-export")
-             (:file . (lambda ()
-                        (let* ((elt (org-element-at-point))
-                               (name (org-element-property :name elt))
-                               (cap (org-export-get-caption elt))
-                               (sha (concat (sha1 (org-element-property :value elt)))))
-                          (concat (or name cap )
-                                  ".svg"))))))
-  (:hooks org-babel-after-execute-hook org-redisplay-inline-images))
+(setup (:elpaca ox-gfm))
 
 (setup (:elpaca org-contrib))
+
+(setup org-faces
+  (:custom org-fontify-quote-and-verse-blocks t)
+  (:option org-todo-keyword-faces
+           '(("[-]"  . org-todo-active)
+             ("STRT" . org-todo-active)
+             ("[?]"  . org-todo-onhold)
+             ("WAIT" . org-todo-onhold)
+             ("HOLD" . org-todo-onhold)
+             ("PROJ" . org-todo-project)
+             ("NO"   . org-todo-cancel)
+             ("KILL" . org-todo-cancel))
+           org-agenda-deadline-faces ;; Don't monopolize the whole frame just for the agenda
+           '((1.001 . error)
+             (1.0 . org-warning)
+             (0.5 . org-upcoming-deadline)
+             (0.0 . org-upcoming-distant-deadline))
+           org-priority-faces
+           '((?A . error)
+             (?B . warning)
+             (?C . shadow))))
+
+(setup org-num
+  (:option org-num-skip-tags '("export" "nonum"))
+  (:hooks org-mode-hook org-num-mode))
+
+(setup org-src
+  (:option org-src-preserve-indentation nil ; use native major-mode indentation
+           org-src-window-setup 'current-window
+           org-src-tab-acts-natively nil ; we do this ourselves
+           ))
+
+(setup org-id
+  (:option org-id-locations-file-relative t
+           org-id-link-to-org-use-id t)
+  (:custom org-id-locations-file '(expand-file-name ".orgids" org-directory)))
 
 (setup (:elpaca toc-org)
   (:hooks org-mode-hook toc-org-mode))
 
+(setup (:elpaca org-make-toc))
+
+(setup (:elpaca org-edit-indirect)
+  (:hooks org-mode-hook org-edit-indirect-mode))
+
+(setup org-archive
+  (:custom org-archive-subtree-save-file-p t))
+
+(setup  calendar
+  (:option calendar-week-start-day t))
+
+(setup org-list
+  (:option org-list-allow-alphabetical t))
+
+(setup org-fold
+  (:option org-fold-invisible-edits 'showeverything ;; 'show-and-error
+           org-fold-catch-invisible-edits 'show))
+
+(setup org-refile
+  (:option org-refile-targets '((nil :maxlevel . 3)
+                                (org-agenda-files :maxlevel . 3))
+           org-refile-use-outline-path 'file
+           org-outline-path-complete-in-steps nil))
+
+(setup org-compat
+  (:option org-imenu-depth 4
+           org-latex-src-block-backend 'minted))
+
+(setup (:elpaca org-appear)
+  (:hooks org-mode-hook org-appear-mode)
+  (:custom org-appear-inside-latex t
+           org-appear-autokeywords t
+           org-appear-autoentities t
+           org-appear-autoemphasis t
+           org-appear-autosubmarkers t
+           org-appear-autolinks 'just-brackets))
+
+(setup ol
+  (:option org-display-remote-inline-images 'download))
+
+(setup org-agenda
+  (:option org-agenda-window-setup 'current-window
+           org-agenda-skip-unavailable-files t
+           org-agenda-span 10
+           org-agenda-start-on-weekday nil
+           org-agenda-start-with-log-mode t
+           org-agenda-start-day "-3d"
+           org-agenda-inhibit-startup t
+           org-agenda-tags-column 0)
+  (:custom org-agenda-custom-commands
+           '(("P"
+              "List of all projects"
+              tags
+              "LEVEL=2/PROJ")
+
+             ("E"
+              "Agenda, next actions and waiting"
+              ((agenda "" ((org-agenda-overriding-header "Next three days:")
+                           (org-agenda-span 3)
+                           (org-agenda-start-on-weekday nil)))
+               (todo "NEXT" ((org-agenda-overriding-header "Next Actions:")))
+               (todo "WAIT" ((org-agenda-overriding-header "Waiting:"))))))))
+
 (setup (:elpaca htmlize))
 
-(setup (:elpaca org-margin :host github :repo "rougier/org-margin")
-  (:hooks org-mode-hook (lambda()(org-margin-mode 1))))
+(setup (:elpaca org-modern)
+  (:require org-modern)
+  (:init (cl-letf ((new-spec (symbol-function (function new-spec))))
+           (ignore new-spec)
+           (cl-letf
+               (((symbol-function (function new-spec))
+                 (cl-function
+                  (lambda (spec)
+                    (if
+                        (or (facep (cdr spec))
+                            (not (keywordp (car-safe (cdr spec)))))
+                        `(:inherit ,(cdr spec))
+                      (cdr spec))))))
+             (progn
+               (unless org-modern-tag-faces
+                 (dolist (spec org-tag-faces)
+                   (add-to-list 'org-modern-tag-faces
+                                `(,(car spec) :inverse-video t
+                                  ,@(new-spec spec)))))
+               (unless org-modern-todo-faces
+                 (dolist (spec org-todo-keyword-faces)
+                   (add-to-list 'org-modern-todo-faces
+                                `(,(car spec) :inverse-video t
+                                  ,@(new-spec spec)))))
+               (unless org-modern-priority-faces
+                 (dolist (spec org-priority-faces)
+                   (add-to-list 'org-modern-priority-faces
+                                `(,(car spec) :inverse-video t
+                                  ,@(new-spec spec)))))))))
+  (:hooks org-mode-hook org-modern-mode
+          org-modern-mode-hook (lambda () (when (bound-and-true-p org-indent-mode) (setq-local org-modern-hide-stars nil
+                                                                                          org-indent-mode-turns-on-hiding-stars nil)))
+          org-agenda-finalize-hook org-modern-agenda)
+  (:custom org-modern-star nil
+           org-modern-hide-stars t))
 
 (setup (:elpaca valign)
   (:custom valign-fancy-bar t)
@@ -379,22 +436,6 @@
   (:hooks org-mode-hook mixed-pitch-mode
           mixed-pitch-mode-hook (lambda () (progn (setopt cursor-type 'box)
                                              (kill-local-variable 'cursor-type)))))
-
-(setup (:elpaca org-edit-indirect)
-  (:hooks org-mode-hook org-edit-indirect-mode))
-
-(setup (:elpaca org-make-toc))
-
-(setup (:elpaca ox-gfm))
-
-(setup (:elpaca org-appear)
-  (:hooks org-mode-hook org-appear-mode)
-  (:custom org-appear-inside-latex t
-           org-appear-autokeywords t
-           org-appear-autoentities t
-           org-appear-autoemphasis t
-           org-appear-autosubmarkers t
-           org-appear-autolinks 'just-brackets))
 
 (provide 'lang-org)
 

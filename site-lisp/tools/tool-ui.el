@@ -106,7 +106,11 @@ This function should be called after theme is loaded."
   (+nanolize)
   (advice-add 'enable-theme :after '+nanolize)
 
-  (:init (load-theme 'doom-nord t nil)))
+  (:init (load-theme 'doom-nord t nil)
+         (doom-themes-org-config))
+
+  (:option doom-themes-enable-bold t
+           doom-themes-enable-italic t))
 
 (setup (:elpaca doom-modeline)
   (doom-modeline-mode +1)
