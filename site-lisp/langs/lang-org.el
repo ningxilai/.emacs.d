@@ -283,9 +283,9 @@
              (?B . warning)
              (?C . shadow))))
 
-(setup org-num
-  (:option org-num-skip-tags '("export" "nonum"))
-  (:hooks org-mode-hook org-num-mode))
+;; (setup org-num
+;;   (:option org-num-skip-tags '("export" "nonum"))
+;;   (:hooks org-mode-hook org-num-mode))
 
 (setup org-src
   (:option org-src-preserve-indentation nil ; use native major-mode indentation
@@ -366,41 +366,50 @@
 
 (setup (:elpaca htmlize))
 
-(setup (:elpaca org-modern)
-  (:require org-modern)
-  (:init (cl-letf ((new-spec (symbol-function (function new-spec))))
-           (ignore new-spec)
-           (cl-letf
-               (((symbol-function (function new-spec))
-                 (cl-function
-                  (lambda (spec)
-                    (if
-                        (or (facep (cdr spec))
-                            (not (keywordp (car-safe (cdr spec)))))
-                        `(:inherit ,(cdr spec))
-                      (cdr spec))))))
-             (progn
-               (unless org-modern-tag-faces
-                 (dolist (spec org-tag-faces)
-                   (add-to-list 'org-modern-tag-faces
-                                `(,(car spec) :inverse-video t
-                                  ,@(new-spec spec)))))
-               (unless org-modern-todo-faces
-                 (dolist (spec org-todo-keyword-faces)
-                   (add-to-list 'org-modern-todo-faces
-                                `(,(car spec) :inverse-video t
-                                  ,@(new-spec spec)))))
-               (unless org-modern-priority-faces
-                 (dolist (spec org-priority-faces)
-                   (add-to-list 'org-modern-priority-faces
-                                `(,(car spec) :inverse-video t
-                                  ,@(new-spec spec)))))))))
-  (:hooks org-mode-hook org-modern-mode
-          org-modern-mode-hook (lambda () (when (bound-and-true-p org-indent-mode) (setq-local org-modern-hide-stars nil
-                                                                                          org-indent-mode-turns-on-hiding-stars nil)))
-          org-agenda-finalize-hook org-modern-agenda)
-  (:custom org-modern-star nil
-           org-modern-hide-stars t))
+;; (setup (:elpaca org-modern)
+;;   (:require org-modern)
+;;   (:init (cl-letf ((new-spec (symbol-function (function new-spec))))
+;;            (ignore new-spec)
+;;            (cl-letf
+;;                (((symbol-function (function new-spec))
+;;                  (cl-function
+;;                   (lambda (spec)
+;;                     (if
+;;                         (or (facep (cdr spec))
+;;                             (not (keywordp (car-safe (cdr spec)))))
+;;                         `(:inherit ,(cdr spec))
+;;                       (cdr spec))))))
+;;              (progn
+;;                (unless org-modern-tag-faces
+;;                  (dolist (spec org-tag-faces)
+;;                    (add-to-list 'org-modern-tag-faces
+;;                                 `(,(car spec) :inverse-video t
+;;                                   ,@(new-spec spec)))))
+;;                (unless org-modern-todo-faces
+;;                  (dolist (spec org-todo-keyword-faces)
+;;                    (add-to-list 'org-modern-todo-faces
+;;                                 `(,(car spec) :inverse-video t
+;;                                   ,@(new-spec spec)))))
+;;                (unless org-modern-priority-faces
+;;                  (dolist (spec org-priority-faces)
+;;                    (add-to-list 'org-modern-priority-faces
+;;                                 `(,(car spec) :inverse-video t
+;;                                   ,@(new-spec spec)))))))))
+;;   (:hooks org-mode-hook org-modern-mode
+;;           org-modern-mode-hook (lambda () (when (bound-and-true-p org-indent-mode) (setq-local org-modern-hide-stars nil
+;;                                                                                           org-indent-mode-turns-on-hiding-stars nil)))
+;;           org-agenda-finalize-hook org-modern-agenda)
+;;   (:custom org-modern-star nil
+;;            org-modern-hide-stars t))
+
+(setup (:elpaca org-superstar)
+  (:custom org-superstar-item-bullet-alist
+           '((?* . ?•)
+             (?+ . ?+)
+             (?- . ?–))
+           org-superstar-headline-bullets-list
+           '(?◉ ?🞛 ?○ ?▷))
+  (:hooks org-mode-hook org-superstar-mode))
 
 (setup (:elpaca valign)
   (:custom valign-fancy-bar t)
