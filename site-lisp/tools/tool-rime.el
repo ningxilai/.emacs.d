@@ -6,6 +6,7 @@
 
 (setup (:elpaca rime :host github :repo "DogLooksGood/emacs-rime")
   (:option rime-librime-root "~/.local/src/librime/build/"
+           rime-emacs-module-header-root "~/.local/include"
            default-input-method "rime")
   (:custom rime-show-candidate 'minibuffer
            rime-disable-predicates '(rime-predicate-after-alphabet-char-p
@@ -20,16 +21,16 @@
                                        :internal-border-width 10))
   (:hooks post-command-hook
           (lambda () (progn
-                  (defvar input-method-cursor-color "Orange"
-                    "Default cursor color if using an input method.")
-                  (defvar default-cursor-color (frame-parameter nil 'cursor-color)
-                    "Default text cursor color.")
-                  (defun change-cursor-color-on-input-method ()
-                    "Set cursor color depending on whether an input method is used or not."
-                    (interactive)
-                    (set-cursor-color (if current-input-method
-                                          input-method-cursor-color
-                                        default-cursor-color)))))))
+                       (defvar input-method-cursor-color "Orange"
+                         "Default cursor color if using an input method.")
+                       (defvar default-cursor-color (frame-parameter nil 'cursor-color)
+                         "Default text cursor color.")
+                       (defun change-cursor-color-on-input-method ()
+                         "Set cursor color depending on whether an input method is used or not."
+                         (interactive)
+                         (set-cursor-color (if current-input-method
+                                               input-method-cursor-color
+                                             default-cursor-color)))))))
 
 (provide 'tool-rime)
 ;;; tool-rime.el ends here

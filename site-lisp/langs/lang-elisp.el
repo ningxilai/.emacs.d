@@ -30,7 +30,7 @@
                   (insert "\n;; ")
                   (insert line)))
             (insert str)))))
-    (advice-add #'eval-last-sexp :around #'enhance.eval-last-sexp-advice))
+    (advice-add 'eval-last-sexp :around #'enhance.eval-last-sexp-advice))
   (add-hook 'lisp-interaction-mode-hook #'enhance.eval-last-sexp))
 
 (setup (:elpaca macrostep)

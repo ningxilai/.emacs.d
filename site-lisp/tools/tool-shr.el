@@ -4,31 +4,6 @@
 
 ;; shr.el
 
-(setup (:elpaca ekp :host github :repo "Kinneyzhang/emacs-kp" :files (:default "*.el" "dictionaries"))
-  (:require ekp-utils ekp-hyphen ekp)
-  (ekp-c-module-load)
-  (:custom ekp-latin-lang "en_US")
-  (:option ekp-line-penalty 10
-           ekp-hyphen-penalty 50
-           ekp-adjacent-fitness-penalty 100
-
-           ekp-lws-ideal-pixel 8
-           ekp-lws-stretch-pixel 4
-           ekp-lws-shrink-pixel 3
-
-           ekp-mws-ideal-pixel 7
-           ekp-mws-stretch-pixel 3
-           ekp-mws-shrink-pixel 2
-
-           ekp-cws-ideal-pixel 0
-           ekp-cws-stretch-pixel 2
-           ekp-cws-shrink-pixel 0)
-
-  (:load eww-kp-direct :dirs ("site-lisp/tools/eww-kp-direct"))
-  (:require eww-kp-direct)
-  (:option eww-kp-use-kp t
-           eww-kp-char-width nil))
-
 (setup (:elpaca nov)
 
   (:mode ".*\\.epub")
@@ -69,8 +44,7 @@
       ;; HACK: `shr-external-rendering-functions' doesn't cover
       ;; every usage of `shr-tag-img'
       (cl-letf (((symbol-function 'shr-tag-img) 'nov-render-img))
-        (shr-render-region (point-min) (point-max)))
-      ))
+        (shr-render-region (point-min) (point-max)))))
 
   (setq nov-render-html-function #'shrface-nov-render-html)
 
@@ -89,6 +63,9 @@
 
 (setup shr
   (:option shr-cookie-policy nil))
+
+(setup eww
+  (:option eww-retrieve-command '("chromium" "--headless" "--dump-dom")))
 
 (setup (:elpaca shrface :host github :repo "chenyanming/shrface")
   (:require shrface)

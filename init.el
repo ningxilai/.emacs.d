@@ -78,5 +78,5 @@
   (:init (exec-path-from-shell-initialize)))
 
 (setup module
-  (:load lang-markdown lang-web lang-org lang-elisp :dirs ("site-lisp/langs/"))
-  (:load tool-ui tool-base tool-meow tool-dired tool-prog tool-text tool-rime tool-completion tool-nerd-icons tool-wm tool-formats tool-shr tool-fanyi tool-dired tool-project tool-eshell tool-musicbrainz :dirs ("site-lisp/tools/")))
+  (:load lang-markdown lang-racket lang-pollen lang-org lang-elisp :dirs ("site-lisp/langs/"))
+  (:load tool-ui tool-base tool-meow tool-dired tool-prog tool-text tool-completion tool-nerd-icons tool-wm tool-formats  tool-dired tool-project tool-eshell tool-fanyi tool-rime tool-shr :dirs ("site-lisp/tools/")))

@@ -130,18 +130,15 @@
   (:custom-face sort-tab-current-tab-face
                 ((((background light))
                   :background "#d5c9c0" :foreground "#282828" :bold t)
-                 (t
-                  :background "#2e3440" :foreground "#fbf1c7" :bold t))
-                sort-tab-other-tab-face
+                 (t :background "#2e3440" :foreground "#fbf1c7" :bold t)))
+  (:custom-face sort-tab-other-tab-face
                 ((((background light))
                   :foreground "#3f3f3f" :bold nil)
-                 (t
-                  :foreground "#bdae93" :bold nil))
-                sort-tab-separator-face
+                 (t :foreground "#bdae93" :bold nil)))
+  (:custom-face sort-tab-separator-face
                 ((((background light))
                   :foreground "#bdae93" :bold t)
-                 (t
-                  :foreground "#665c54" :bold t)))
+                 (t :foreground "#665c54" :bold t)))
   (:global "C-0" sort-tab-close-current-tab
            "C-1" sort-tab-select-visible-tab
            "C-2" sort-tab-select-visible-tab

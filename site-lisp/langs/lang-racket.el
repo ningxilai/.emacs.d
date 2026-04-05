@@ -1,13 +1,9 @@
 ;; -*- lexical-binding: t; -*-
 
-;;; Racket & Pollen
+;;; Racket
 
 (setup (:elpaca racket-mode)
-  (:mode "\\.rkt\\'" "\\.scrbl\\'"  "\\.rhm\\'")
-  (:load pollen-mode :dirs ("site-lisp/lang/"))
-  (:require pollen-mode)
-  (:mode ("\\.html.pm" . racket-mode))
-  (:hooks racket-mode-hook pollen-enable-if-pollen-file))
+  (:mode "\\.rkt\\'" "\\.scrbl\\'"  "\\.rhm\\'"))
 
 (provide 'lang-racket)
-;;; lang-chinese.el ends here
+;;; lang-racket.el ends here

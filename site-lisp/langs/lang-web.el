@@ -28,10 +28,18 @@
                             collect (cons (car pair)
                                           (string-trim-right (cdr pair)
                                                              "\\(?:>\\|]\\|}\\)+\\'"))))))
-  (:option web-mode-enable-html-entities-fontification t
-           web-mode-auto-close-style 1)
-  (:custom web-mode-enable-auto-quoting nil
-           web-mode-enable-auto-pairing t))
+  (:option web-mode-auto-close-style 2)
+  (:custom  web-mode-enable-html-entities-fontification t
+            web-mode-enable-auto-quoting nil
+            web-mode-enable-auto-pairing t))
+
+(setup typescript-ts-mode
+  (:mode ("\\.ts\\'"  . typescript-ts-mode)
+         ("\\.tsx\\'" . tsx-ts-mode)))
+
+(setup js-ts-mode
+  (:mode ("\\.js\\'"  . js-ts-mode)
+         ("\\.jsx\\'" . js-jsx-mode)))
 
 (provide 'lang-web)
 ;; ends here.

@@ -28,34 +28,33 @@
   (:hooks lsp-mode-hook lsp-ui-mode))
 
 (setup (:elpaca dtrt-indent)
+  (:require dtrt-indent)
   (defmacro space/hide-lighter (mode)
     "Diminish MODE name in mode line to LIGHTER."
     `(eval-after-load 'diminish '(diminish ',mode)))
   (space/hide-lighter dtrt-indent-mode)
 
-  (:hooks prog-mode-hook (lambda () (dtrt-indent-mode)
-                           (dtrt-indent-adapt))))
+  (:hooks prog-mode-hook dtrt-indent-adapt
+          prog-mode-hook (lambda () (dtrt-indent-mode t))))
 
 (setup treesit
 
-  (:option treesit-enabled-modes t
-           treesit-font-lock-level 4
-           treesit--font-lock-verbose nil
-
-           treesit--indent-verbose t
-
-           toml-ts-mode-indent-offset 4
+  (:option toml-ts-mode-indent-offset 4
            rust-ts-mode-indent-offset 4
            cmake-ts-mode-indent-offset 4
            json-ts-mode-indent-offset 4
            go-ts-mode-indent-offset 4)
 
+  (:option* treesit-enabled-modes t
+            treesit-font-lock-level 4)
+
   (save-match-data
     (dolist (sym '(auto-mode-alist interpreter-mode-alist))
-      (set sym (cl-loop for (src . fn) in (symbol-value sym)
-                        unless (and (functionp fn)
-                                    (string-match "-ts-mode\\(?:-maybe\\)?$" (symbol-name fn)))
-                        collect (cons src fn)))))
+      (set
+       sym (cl-loop for (src . fn) in (symbol-value sym)
+                    unless (and (functionp fn)
+                                (string-match "-ts-mode\\(?:-maybe\\)?$" (symbol-name fn)))
+                    collect (cons src fn)))))
 
   (:custom treesit-language-source-alist
            '((awk . ("https://github.com/Beaglefoot/tree-sitter-awk.git"))
@@ -106,8 +105,6 @@
            major-mode-remap-alist
            '((c-mode          . c-ts-mode)
              (c++-mode        . c++-ts-mode)
-             (c-or-c++-mode   . c-or-c++-ts-mode)
-             (cmake-mode      . cmake-ts-mode)
              (clojure-mode    . clojure-ts-mode)
              (conf-toml-mode  . toml-ts-mode)
              (csharp-mode     . csharp-ts-mode)
@@ -119,13 +116,12 @@
              (mhtml-mode      . mhtml-ts-mode)
              (python-mode     . python-ts-mode)
              (ruby-mode       . ruby-ts-mode)
-             (sh-mode         . bash-ts-mode)
-             (typescript-mode . typescript-ts-mode))))
+             (sh-mode         . bash-ts-mode))))
 
 (setup (:elpaca colorful-mode)
-  (:init (setq-default colorful-use-prefix t))
   (dolist (mode '(html-mode php-mode help-mode helpful-mode))
     (add-to-list 'global-colorful-modes mode))
+  (:option* colorful-use-prefix t)
   (:hooks prog-mode-hook colorful-mode))
 
 (setup (:elpaca region-occurrences-highlighter)
@@ -210,11 +206,17 @@
   (:hooks prog-mode-hook perfect-palette-override-enable))
 
 (setup whitespace
-  (whitespace-mode +1)
-  (:init
-   (setq-default which-func-update-delay 0.2
-                 show-trailing-whitespace nil))
-  (:option whitespace-line-column nil)
+  (whitespace-mode t)
+  (:option* which-func-update-delay 0.2
+            show-trailing-whitespace nil)
+  (:option whitespace-line-column nil
+           whitespace-style
+           '(face indentation tabs tab-mark spaces space-mark newline newline-mark
+                  trailing lines-tail)
+           whitespace-display-mappings
+           '((tab-mark ?\t [?› ?\t])
+             (newline-mark ?\n [?¬ ?\n])
+             (space-mark ?\  [?·] [?.])))
   (:custom indicate-empty-lines nil
            whitespace-style '(faces
                               tab-mark
@@ -224,7 +226,6 @@
                               indentation
                               empty
                               space-after-tab))
-  (:custom-face whitespace-display-mappings `((tab-mark ?\t [,(make-glyph-code ?» 'whitespace-tab) ?\t])))
   (:hooks before-save-hook delete-trailing-whitespace-mode
           prog-mode-hook (lambda () (setq-local show-trailing-whitespace t))))
 

@@ -4,7 +4,7 @@
 
 ;; Org
 
-(setup (:elpaca org)
+(setup org
 
   (:option org-todo-keywords
            '((sequence
@@ -285,7 +285,9 @@
 
 ;; (setup org-num
 ;;   (:option org-num-skip-tags '("export" "nonum"))
-;;   (:hooks org-mode-hook org-num-mode))
+;;   (:hooks org-mode-hook (lambda () (when (bound-and-true-p org-indent-mode)
+;;                                 (setq-local org-num-mode t
+;;                                             org-indent-mode-turns-on-hiding-stars nil)))))
 
 (setup org-src
   (:option org-src-preserve-indentation nil ; use native major-mode indentation
@@ -346,7 +348,7 @@
            org-agenda-skip-unavailable-files t
            org-agenda-span 10
            org-agenda-start-on-weekday nil
-           org-agenda-start-with-log-mode t
+           org-agenda-start-with-log-mode 'clockcheck
            org-agenda-start-day "-3d"
            org-agenda-inhibit-startup t
            org-agenda-tags-column 0)
@@ -365,42 +367,6 @@
                (todo "WAIT" ((org-agenda-overriding-header "Waiting:"))))))))
 
 (setup (:elpaca htmlize))
-
-;; (setup (:elpaca org-modern)
-;;   (:require org-modern)
-;;   (:init (cl-letf ((new-spec (symbol-function (function new-spec))))
-;;            (ignore new-spec)
-;;            (cl-letf
-;;                (((symbol-function (function new-spec))
-;;                  (cl-function
-;;                   (lambda (spec)
-;;                     (if
-;;                         (or (facep (cdr spec))
-;;                             (not (keywordp (car-safe (cdr spec)))))
-;;                         `(:inherit ,(cdr spec))
-;;                       (cdr spec))))))
-;;              (progn
-;;                (unless org-modern-tag-faces
-;;                  (dolist (spec org-tag-faces)
-;;                    (add-to-list 'org-modern-tag-faces
-;;                                 `(,(car spec) :inverse-video t
-;;                                   ,@(new-spec spec)))))
-;;                (unless org-modern-todo-faces
-;;                  (dolist (spec org-todo-keyword-faces)
-;;                    (add-to-list 'org-modern-todo-faces
-;;                                 `(,(car spec) :inverse-video t
-;;                                   ,@(new-spec spec)))))
-;;                (unless org-modern-priority-faces
-;;                  (dolist (spec org-priority-faces)
-;;                    (add-to-list 'org-modern-priority-faces
-;;                                 `(,(car spec) :inverse-video t
-;;                                   ,@(new-spec spec)))))))))
-;;   (:hooks org-mode-hook org-modern-mode
-;;           org-modern-mode-hook (lambda () (when (bound-and-true-p org-indent-mode) (setq-local org-modern-hide-stars nil
-;;                                                                                           org-indent-mode-turns-on-hiding-stars nil)))
-;;           org-agenda-finalize-hook org-modern-agenda)
-;;   (:custom org-modern-star nil
-;;            org-modern-hide-stars t))
 
 (setup (:elpaca org-superstar)
   (:custom org-superstar-item-bullet-alist

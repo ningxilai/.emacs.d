@@ -68,8 +68,8 @@
   (when (or (daemonp) (display-graphic-p))
     (push 'vc-state dirvish-attributes))
   (cl-callf append dirvish-attributes '(nerd-icons subtree-state))
-  (:advice dired--find-file :override dirvish--find-entry
-           dired-noselect :around dirvish-dired-noselect-a)
+  (advice-add 'dired--find-file :override #'dirvish--find-entry)
+  (advice-add 'dired-noselect :around #'dirvish-dired-noselect-a)
   (:option dirvish-override-dired-mode t
            dirvish-reuse-session 'open
            dirvish-subtree-always-show-state t

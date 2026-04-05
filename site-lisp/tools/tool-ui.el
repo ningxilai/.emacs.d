@@ -293,9 +293,9 @@ This function should be called after theme is loaded."
                                      ("Yuanti SC"           . 1.16)
                                      ("Apple Color Emoji"   . 0.91)))
 
-  (:custom-face fixed-pitch  ((t((:family "SF Mono"))))
-                fixed-pitch-serif ((t((:family "SF Mono")))) ;; New York
-                variable-pitch ((t((:family "SF Pro")))))) ;; Helvetica Neue
+  (:custom-face fixed-pitch :family "SF Mono")
+  (:custom-face fixed-pitch-serif :family "SF Mono") ;; New York
+  (:custom-face variable-pitch :family "SF Mono")) ;; Helvetica Neue
 
 (setup (:elpaca fontaine)
   (:option fontaine-presets

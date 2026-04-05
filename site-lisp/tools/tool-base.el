@@ -72,7 +72,7 @@
   (:option  hl-line-sticky-flag nil
             global-hl-line-sticky-flag nil
             hl-line-range-function (lambda () (cons (line-end-position)
-                                               (line-beginning-position 2))))
+                                                    (line-beginning-position 2))))
   (:hooks prog-mode-hook hl-line-mode))
 
 (setup pixel-scroll
@@ -150,7 +150,6 @@
            global-prettify-symbols-mode t)
 
   (:custom global-text-scale-adjust-resizes-frames nil ;; face-remap
-           custom-buffer-done-kill t                   ;; cus-edit
            tramp-backup-directory-alist backup-directory-alist) ;; Tramp
 
   (:hooks emacs-startup-hook (lambda () (setopt kill-buffer-delete-auto-save-files t
@@ -200,7 +199,8 @@
                                            ;; startup
                                            )))
 
-  (setq-default custom-file (expand-file-name "custom.el" user-emacs-directory))
+  (setq-default custom-file (expand-file-name "custom.el" user-emacs-directory)
+                custom-buffer-done-kill t)
   (load custom-file :no-error-if-file-is-missing)
 
   (defun logging-disabled-command (&optional cmd keys)

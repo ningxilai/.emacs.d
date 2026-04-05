@@ -17,10 +17,10 @@
            cape-dabbrev-min-length 2
            cape-dabbrev-check-other-buffers t)
 
-  (:advice lsp-completion-at-point :around cape-wrap-noninterruptible
-           lsp-completion-at-point :around cape-wrap-nonexclusive
-           comint-completion-at-point :around cape-wrap-nonexclusive
-           pcomplete-completions-at-point :around cape-wrap-nonexclusive))
+  (define-advice lsp-completion-at-point (:around ()) cape-wrap-noninterruptible)
+  (define-advice lsp-completion-at-point (:around ()) cape-wrap-nonexclusive)
+  (define-advice comint-completion-at-point (:around ()) cape-wrap-nonexclusive)
+  (define-advice pcomplete-completions-at-point (:around ()) cape-wrap-nonexclusive))
 
 (setup (:elpaca prescient :host github :repo "radian-software/prescient.el")
 
@@ -82,7 +82,7 @@
 
          (define-key read-expression-map (kbd "C-r") #'consult-history))
 
-  (:advice register-preview :override consult-register-window)
+  (advice-add 'register-preview :override #'consult-register-window)
 
   (:option consult-narrow-key "<"
            consult-line-numbers-widen t

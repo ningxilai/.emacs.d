@@ -628,12 +628,6 @@ The arguments REST are handled as by `:bind'."
 
 (setup-define :bind-to
   (lambda (binding)
-    `(keymap-global-set ,binding #',(setup-get 'func)))
-  :documentation "Bind current function to KEY globally."
-  :repeatable t)
-
-(setup-define :bind-to
-  (lambda (binding)
     (if (vectorp binding)
         ;; For vector keys like [remap ...], use global-set-key
         `(global-set-key ,binding #',(setup-get 'func))
@@ -668,6 +662,26 @@ The arguments REST are handled as by `:bind'."
   (lambda (&rest body) (macroexp-progn body))
   :documentation "Init keywords like use-package and leaf.")
 
+(defmacro setq! (&rest settings)
+  "A more sensible `setopt' for setting customizable variables.
+
+This can be used as a drop-in replacement for `setq' and *should* be used
+instead of `setopt'. Unlike `setq', this triggers custom setters on variables.
+Unlike `setopt', this won't needlessly pull in dependencies."
+  (macroexp-progn
+   (cl-loop for (var val) on settings by 'cddr
+            collect `(funcall (or (get ',var 'custom-set) #'set-default-toplevel-value)
+                              ',var ,val))))
+
+(setup-define :option*
+  (lambda (name val)
+    `(setq! ,name ,val))
+  :documentation "Set the option NAME to VAL using `setopt'.
+Note: Options set with this macro are not added to the \"user\" theme,
+and will therefore not be stored in `custom-set-variables' blocks."
+  :debug '(symbolp form)
+  :repeatable t)
+
 (setup-define :option
   (lambda (name val)
     `(setopt ,name ,val))
@@ -695,11 +709,27 @@ and will therefore not be stored in `custom-set-variables' blocks."
   :after-loaded t)
 
 (setup-define :custom-face
-  (lambda (face spec) `(custom-set-faces (quote (,face ,spec))))
-  :documentation "Customize FACE to SPEC."
-  :signature '(face spec ...)
-  :debug '(setup)
-  :repeatable t
+  (lambda (face &rest args)
+    (let ((spec (cond
+                 ;; Proper spec: ((t (:foreground "red")))
+                 ((and (listp (car args)) (listp (car (car args))))
+                  (car args))
+                 ;; Keyword plist: (:foreground "red")
+                 ((and (listp (car args)) (keywordp (car (car args))))
+                  (list (list t (car args))))
+                 ;; Flat keywords: :foreground "red" :background "blue"
+                 ((keywordp (car args))
+                  (let ((face-props nil))
+                    (while args
+                      (push (pop args) face-props)
+                      (push (pop args) face-props))
+                    (list (list t (nreverse face-props)))))
+                 (t (car args)))))
+      `(custom-set-faces (list ',face ',spec))))
+  :documentation "Customize FACE to SPEC. Supports:
+- (:custom-face face :foreground \"red\" :background \"blue\")
+- (:custom-face face (:foreground \"red\"))
+- (:custom-face face ((t (:foreground \"red\"))))"
   :after-loaded t)
 
 ;; (:custom-face forge-topic-closed ((t (:strike-through t))))
