@@ -1,0 +1,12 @@
+;;; setup-dsl-surface.el --- compatibility alias for setup PEG reader -*- lexical-binding: t; -*-
+
+(require 'setup-peg)
+
+;; This file remains as a private transition name for the files already on
+;; the branch.  It intentionally exposes infrastructure only; it does not
+;; define a `:dsl' keyword or any semantic rule.
+(defalias 'setup-dsl-read-string #'setup-peg-read-string)
+(defalias 'setup-dsl-read-file #'setup-peg-read-file)
+
+(provide 'setup-dsl-surface)
+;;; setup-dsl-surface.el ends here
