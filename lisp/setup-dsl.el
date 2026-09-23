@@ -1,20 +1,14 @@
-;;; setup-dsl.el --- setup-integrated DSL facade -*- lexical-binding: t; -*-
+;;; setup-dsl.el --- setup integration entry points -*- lexical-binding: t; -*-
 
-(require 'setup)
-(require 'setup-dsl-surface)
 (require 'setup-dsl-backend)
-
-;;;###autoload
-(defmacro setup-dsl (name &rest body)
-  "Configure NAME with the rewrite language hosted by `setup'."
-  (declare (indent 1))
-  `(setup ,name ,@(setup-dsl-expand-setup-body body)))
+(require 'setup-peg)
 
 (defun setup-dsl-eval-string (string)
-  "Parse and evaluate STRING as standalone DSL forms." 
+  "Parse and evaluate STRING as standalone trusted configuration.
+This is an explicit utility, not a setup keyword."
   (mapc (lambda (form)
           (eval (setup-dsl-compile form :elisp) lexical-binding))
-        (setup-dsl-read-string string)))
+        (setup-peg-read-string string)))
 
 (provide 'setup-dsl)
 ;;; setup-dsl.el ends here
