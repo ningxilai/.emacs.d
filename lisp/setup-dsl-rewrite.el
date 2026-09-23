@@ -2,6 +2,7 @@
 
 (require 'cl-lib)
 (require 'seq)
+(require 'setup-value)
 
 (define-error 'setup-dsl-rewrite-error "Setup DSL rewrite error")
 
@@ -65,23 +66,30 @@
     (signal 'setup-dsl-rewrite-error
             (list "Too few arguments" form))))
 
+(defun setup-dsl--arg (form n position validator)
+  (funcall validator position (nth n form)))
+
 (setup-dsl-define-rule
  :option :desugar
  (lambda (form)
    (setup-dsl--require-arity form 3)
-   `(:set ,(nth 1 form) ,(nth 2 form) :default)))
+   `(:set ,(setup-dsl--arg form 1 'variable #'setup-value-variable)
+          ,(nth 2 form) :default)))
 
 (setup-dsl-define-rule
  :custom :desugar
  (lambda (form)
    (setup-dsl--require-arity form 3)
-   `(:set ,(nth 1 form) ,(nth 2 form) :custom)))
+   `(:set ,(setup-dsl--arg form 1 'variable #'setup-value-variable)
+          ,(nth 2 form) :custom)))
 
 (setup-dsl-define-rule
  :global :desugar
  (lambda (form)
    (setup-dsl--require-arity form 3)
-   `(:bind (current-global-map) ,(nth 1 form) ,(nth 2 form))))
+   `(:bind (current-global-map)
+           ,(setup-value-key 'key (nth 1 form))
+           ,(setup-value-function 'command (nth 2 form)))))
 
 (setup-dsl-define-rule
  :hooks :desugar
@@ -90,13 +98,15 @@
      (unless (zerop (% (length args) 2))
        (signal 'setup-dsl-rewrite-error (list "`:hooks' expects pairs" form)))
      `(:seq ,@(cl-loop for (hook function) on args by #'cddr
-                       collect `(:hook ,hook ,function)))))
+                       collect `(:hook ,(setup-value-symbol 'hook hook)
+                                          ,(setup-value-function 'function function)))))))
 
 (setup-dsl-define-rule
  :after :load
  (lambda (form)
    (setup-dsl--require-arity form 3)
-   `(:load-after ,(nth 1 form) (:seq ,@(cddr form)))))
+   `(:load-after ,(setup-value-feature 'feature (nth 1 form))
+                 (:seq ,@(cddr form)))))
 
 (setup-dsl-define-rule
  :when-loaded :load
