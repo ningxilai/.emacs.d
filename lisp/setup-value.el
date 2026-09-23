@@ -1,58 +1,55 @@
-;;; setup-value.el --- explicit setup value validation -*- lexical-binding: t; -*-
+;;; setup-value.el --- typed values for setup terms -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2026 include-yy
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
-;; Values are classified before lowering: semantic names are symbols, textual
-;; values are strings/vectors, code is explicit Lisp, and computed/opaque
-;; values are never inspected by the rewriter.
+;; Values are checked at the primitive boundary.  The four classes are:
+;; semantic symbols, textual values, code values, and opaque/computed values.
 
 ;;; Code:
 
 (define-error 'setup-value-error "Invalid setup value")
 
 (defun setup-value-error (position value expected)
-  "Signal an explicit value error for POSITION and VALUE."
   (signal 'setup-value-error
           (list :position position :value value :expected expected)))
 
 (defun setup-value-symbol (position value)
-  "Return VALUE when it is a semantic symbol."
   (if (symbolp value) value
     (setup-value-error position value 'symbol)))
 
 (defun setup-value-text (position value)
-  "Return VALUE when it is textual data."
   (if (stringp value) value
     (setup-value-error position value 'string)))
 
 (defun setup-value-key (position value)
-  "Return VALUE when it is an Emacs key description."
   (if (or (stringp value) (vectorp value)) value
     (setup-value-error position value '(or string vector))))
 
-(defun setup-value-code (_position value)
-  "Return arbitrary Lisp VALUE as code data.
-This validator deliberately does not evaluate or recursively inspect VALUE."
-  value)
+(defun setup-value-code (_position value) value)
 
-(defun setup-value-computed (position value)
-  "Return computed VALUE when it is an explicit Lisp form."
-  (if (consp value) value
-    (setup-value-error position value 'form)))
+(defun setup-value-opaque (_position value) value)
 
 (defun setup-value-function (position value)
-  "Return VALUE when it explicitly denotes a function name/form."
-  (cond ((symbolp value) value)
-        ((and (consp value) (memq (car value) '(quote function))) value)
-        (t (setup-value-error position value 'function))))
+  (if (or (symbolp value)
+          (and (consp value) (memq (car value) '(quote function))))
+      value
+    (setup-value-error position value 'function)))
 
-(defun setup-value-variable (position value) (setup-value-symbol position value))
-(defun setup-value-feature (position value) (setup-value-symbol position value))
-(defun setup-value-hook (position value) (setup-value-symbol position value))
-(defun setup-value-mode (position value) (setup-value-symbol position value))
-(defun setup-value-map (position value) (setup-value-symbol position value))
+(defun setup-value-boolean (position value)
+  (if (or (eq value t) (null value)) value
+    (setup-value-error position value 'boolean)))
+
+(defun setup-value-list (position value)
+  (if (listp value) value
+    (setup-value-error position value 'list)))
+
+(defalias 'setup-value-variable #'setup-value-symbol)
+(defalias 'setup-value-feature #'setup-value-symbol)
+(defalias 'setup-value-map #'setup-value-symbol)
+(defalias 'setup-value-mode #'setup-value-symbol)
+(defalias 'setup-value-hook #'setup-value-symbol)
 
 (provide 'setup-value)
 ;;; setup-value.el ends here
