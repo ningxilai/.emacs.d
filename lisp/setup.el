@@ -48,6 +48,28 @@
 
 ;;; Code:
 
+(require 'setup-peg)
+
+(defun setup-read-string (string)
+  "Read STRING using the bare PEG surface reader.
+This function only parses text into Lisp forms; it performs no
+rewrite, no expansion, and no evaluation.  Higher-level semantics are
+left to the caller and to the host `setup' macro."
+  (setup-peg-read-string string))
+
+(defun setup-read-file (file)
+  "Read FILE using the bare PEG surface reader.
+The returned values are the unevaluated forms in FILE, with no
+rewriting or evaluation performed."
+  (setup-peg-read-file file))
+
+(defun setup-eval-string (string)
+  "Read and evaluate STRING as a sequence of setup forms.
+This is a deliberately small, explicit entry point.  It does not
+introduce a bespoke DSL or any non-host macro semantics."
+  (dolist (form (setup-read-string string))
+    (eval form)))
+
 (defvar setup-opts `((quit . ,(make-symbol "setup-quit")))
   "Alist defining the context for local macros.
 Context-modifying macros (`:with-feature', `:with-mode', ...)
@@ -950,43 +972,6 @@ contains an alist with the key `elpaca'."
   :documentation "Install ORDER with `elpaca'.
 The ORDER can be used to deduce the feature context."
   :shorthand #'cadr)
-
-;; ---------------------------------------------------------------------
-;; Setup DSL integration.
-;; ---------------------------------------------------------------------
-
-(require 'setup-dsl-backend)
-
-(defmacro setup-dsl (name &rest body)
-  "A small DSL facade built on top of the host `setup' macro.
-It rewrites surface DSL forms into the host `setup' vocabulary before
-expanding the block."
-  (declare (indent 1))
-  `(setup ,name
-     ,@(apply #'append
-              (mapcar (lambda (form)
-                        (let ((out (setup-dsl-compile form :setup)))
-                          (if (and (listp out)
-                                   (eq (car out) :seq))
-                              (cdr out)
-                            (list out))))
-                      body))))
-
-(setup-define :dsl
-  (lambda (&rest body)
-    (require 'setup-dsl-backend)
-    (let ((forms (mapcar (lambda (form)
-                           (let ((out (setup-dsl-compile form :setup)))
-                             (if (and (listp out)
-                                      (eq (car out) :seq))
-                                 (cdr out)
-                               (list out))))
-                         body)))
-      `(progn ,@(apply #'append forms))))
-  :documentation "Evaluate the setup DSL within a `setup' body.
-This is the wraparound point for the term-rewrite layer."
-  :indent 1
-  :repeatable t)
 
 (provide 'setup)
 
