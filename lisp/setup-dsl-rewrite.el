@@ -24,8 +24,9 @@
 
 (defun setup-dsl-define-rule (name phase function)
   "Register FUNCTION as the NAME rule for PHASE." 
-  (unless (and (keywordp name) (functionp function))
-    (signal 'setup-dsl-rewrite-error (list "Invalid rule" name function)))
+  (unless (and (keywordp name) (memq phase setup-dsl-phases)
+               (functionp function))
+    (signal 'setup-dsl-rewrite-error (list "Invalid rule" name phase function)))
   (setf (alist-get name setup-dsl-rules)
         (setup-dsl-rule-create :name name :phase phase :function function))
   name)
@@ -48,14 +49,14 @@
       (if (and rule (= (setup-dsl--phase-index rule-phase)
                        (setup-dsl--phase-index phase)))
           (let ((result (funcall (setup-dsl-rule-function rule) form)))
-            (when (equal result form)
+            (when (or (null result) (equal result form))
               (signal 'setup-dsl-rewrite-error
-                      (list "Non-progressing rewrite" form)))
+                      (list "Non-progressing or empty rewrite" form)))
             (setup-dsl--walk result phase))
         (setup-dsl--children form phase))))))
 
 (defun setup-dsl-rewrite (form)
-  "Rewrite FORM through every phase, returning a new term." 
+  "Rewrite FORM through every phase, returning a core term." 
   (seq-reduce (lambda (term phase) (setup-dsl--walk term phase))
               setup-dsl-phases form))
 
@@ -64,8 +65,6 @@
     (signal 'setup-dsl-rewrite-error
             (list "Too few arguments" form))))
 
-;; Core structural and loading terms are intentionally boring.  All clever
-;; forms below reduce to these terms.
 (setup-dsl-define-rule
  :option :desugar
  (lambda (form)
@@ -87,8 +86,11 @@
 (setup-dsl-define-rule
  :hooks :desugar
  (lambda (form)
-   `(:seq ,@(mapcar (lambda (pair) `(:hook ,(car pair) ,(cdr pair)))
-                    (seq-partition (cdr form) 2)))))
+   (let ((args (cdr form)))
+     (unless (zerop (% (length args) 2))
+       (signal 'setup-dsl-rewrite-error (list "`:hooks' expects pairs" form)))
+     `(:seq ,@(cl-loop for (hook function) on args by #'cddr
+                       collect `(:hook ,hook ,function)))))
 
 (setup-dsl-define-rule
  :after :load
