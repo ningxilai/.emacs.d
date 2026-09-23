@@ -251,14 +251,8 @@ functions `func'.  `&rest' means that the remaining symbols apply
 to the remaining arguments repeatedly.  Any other value is
 invalid."
   (declare (indent 1))
-  ;; NB.: NAME is not required to by a keyword, even though all macros
-  ;;      specified on the next page use keywords.  The rationale for
-  ;;      this is currently that there is no clean way to "locally"
-  ;;      modify indentation, without setting `lisp-indent-function',
-  ;;      chaining the indentation behaviour everywhere.
   (unless (symbolp name)
     (error "Macro name must be a symbol"))
-  ;; save metadata
   (put name 'setup-documentation (plist-get opts :documentation))
   (put name 'setup-signature
        (or (plist-get opts :signature)
@@ -268,8 +262,7 @@ invalid."
   (put name 'setup-definition-file (or load-file-name buffer-file-name))
   (put name 'setup-delayed-eval (plist-get opts :after-loaded))
   (put name 'lisp-indent-function (plist-get opts :indent))
-  ;; define macro for `macroexpand-all'
-  (setf (alist-get name setup-macros)   ;New in Emacs-25.
+  (setf (alist-get name setup-macros)
         (let* ((possible-num-repeated (if (eq (plist-get opts :repeatable) t)
                                           (car (func-arity fn))
                                         (plist-get opts :repeatable)))
@@ -281,7 +274,6 @@ invalid."
                              (num-shared)
                              (shared-args)
                              (num-repeated))
-
                          (if using-shared-args
                              (progn
                                (setq num-shared (car possible-num-repeated)
@@ -293,10 +285,8 @@ invalid."
                                      args (nthcdr num-shared args))
                                (setf (nthcdr num-shared shared-args) nil))
                            (setq num-repeated possible-num-repeated))
-
                          (unless (zerop (mod (length args) num-repeated))
                            (error "Illegal arguments"))
-
                          (while args
                            (let ((rest (nthcdr num-repeated args)))
                              (setf (nthcdr num-repeated args) nil)
@@ -318,8 +308,6 @@ invalid."
                 `(with-eval-after-load ',(setup-get 'feature)
                    ,(apply fn args)))
             fn)))
-  ;; FIXME: Use `&interpose' with `edebug-lexical-macro-ctx' in Emacs≥28;
-  ;; see `cl-macrolet' how to do it.
   (setf (alist-get (symbol-name name)
                    (cdddr (get 'setup 'edebug-form-spec))
                    nil nil #'equal)
@@ -339,7 +327,6 @@ invalid."
 (add-to-list 'elisp-xref-find-def-functions
              #'setup--xref-def-function)
 
-
 ;;; Common utility functions for local macros
 
 (defun setup-get (opt)
@@ -442,7 +429,6 @@ VAL into one s-expression."
                          list))))
           ((error "Invalid option %S" name)))))
 
-
 ;;; Default local macros definitions
 
 (setup-define :with-feature
@@ -556,24 +542,15 @@ The first FEATURE can be used to deduce the feature context."
 (setup-define :global
   (lambda (key command)
     (if (vectorp key)
-        ;; For vector keys like [remap ...], use global-set-key
         `(global-set-key ,key ,command)
       `(keymap-global-set ,key ,command)))
   :documentation "Use `keymap-global-set' to define global keybindings."
   :ensure '(nil func)
   :repeatable t)
 
-;; (setup-define :global
-;;   (lambda (key command)
-;;     `(keymap-global-set ,key ,command))
-;;   :documentation "Use `keymap-global-set' to define global keybindings."
-;;   :ensure '(nil func)
-;;   :repeatable t)
-
 (setup-define :bind
   (lambda (key command)
     (if (vectorp key)
-        ;; For vector keys like [remap ...], use define-key
         `(define-key ,(setup-get 'map) ,key ,command)
       `(keymap-set ,(setup-get 'map) ,key ,command)))
   :documentation "Bind KEY to COMMAND in current map."
@@ -585,7 +562,6 @@ The first FEATURE can be used to deduce the feature context."
 (setup-define :unbind
   (lambda (key)
     (if (vectorp key)
-        ;; For vector keys like [remap ...], use define-key
         `(define-key ,(setup-get 'map) ,key nil)
       `(keymap-set ,(setup-get 'map) ,key nil)))
   :documentation "Unbind KEY in current map."
@@ -596,7 +572,6 @@ The first FEATURE can be used to deduce the feature context."
 (setup-define :rebind
   (lambda (key command)
     (if (vectorp key)
-        ;; For vector keys like [remap ...], use define-key
         `(progn
            (dolist (old-key (where-is-internal ',command ,(setup-get 'map)))
              (define-key ,(setup-get 'map) old-key nil))
@@ -615,8 +590,6 @@ The first FEATURE can be used to deduce the feature context."
   (lambda (feature &rest rest)
     (if (string-match-p "-map\\'" (symbol-name feature))
         (progn
-          ;; https://lists.sr.ht/~pkal/public-inbox/%3C87pluzt28q.fsf@ushin.org%3E
-          ;; https://lists.sr.ht/~pkal/public-inbox/%3C87edbdma8j.fsf@ushin.org%3E
           (warn "The `:bind-into' with a map %S is considered unreliable, and will be deprecated." feature)
           `(:with-map ,feature (:bind ,@rest)))
       `(:with-feature ,feature (:bind ,@rest))))
@@ -629,7 +602,6 @@ The arguments REST are handled as by `:bind'."
 (setup-define :bind-to
   (lambda (binding)
     (if (vectorp binding)
-        ;; For vector keys like [remap ...], use global-set-key
         `(global-set-key ,binding #',(setup-get 'func))
       `(keymap-global-set ,binding #',(setup-get 'func))))
   :documentation "Bind current function to KEY globally."
@@ -711,13 +683,10 @@ and will therefore not be stored in `custom-set-variables' blocks."
 (setup-define :custom-face
   (lambda (face &rest args)
     (let ((spec (cond
-                 ;; Proper spec: ((t (:foreground "red")))
                  ((and (listp (car args)) (listp (car (car args))))
                   (car args))
-                 ;; Keyword plist: (:foreground "red")
                  ((and (listp (car args)) (keywordp (car (car args))))
                   (list (list t (car args))))
-                 ;; Flat keywords: :foreground "red" :background "blue"
                  ((keywordp (car args))
                   (let ((face-props nil))
                     (while args
@@ -732,8 +701,6 @@ and will therefore not be stored in `custom-set-variables' blocks."
 - (:custom-face face ((t (:foreground \"red\"))))"
   :after-loaded t)
 
-;; (:custom-face forge-topic-closed ((t (:strike-through t))))
-
 (setup-define :local-set
   (setup-make-setter
    (lambda (name)
@@ -746,25 +713,25 @@ will use the car value to modify the behaviour. These forms are
 supported:
 
 (append VAR)    Assuming VAR designates a list, add VAL as its last
-                element, unless it is already member of the list.
+element, unless it is already member of the list.
 
 (prepend VAR)   Assuming VAR designates a list, add VAL to the
-                beginning, unless it is already member of the
-                list.
+beginning, unless it is already member of the
+list.
 
 (remove VAR)    Assuming VAR designates a list, remove all instances
-                of VAL.
+of VAL.
 
 (append* VAR)   Assuming VAR designates a list, add each element
-                of VAL to the end of VAR, keeping their order,
-                unless it is already a member of the list.
+of VAL to the end of VAR, keeping their order,
+unless it is already a member of the list.
 
-(prepend* VAR)  Assuming VAR designates a list, add each element
-                of VAL to the start of VAR, keeping their order,
-                unless it is already a member of the list.
+(prepend* VAR)   Assuming VAR designates a list, add each element
+of VAL to the start of VAR, keeping their order,
+unless it is already a member of the list.
 
 (remove* VAR)   Assuming VAR designates a list, remove all
-                instances of each element of VAL."
+instances of each element of VAL."
   :debug '(sexp form)
   :repeatable t)
 
@@ -818,10 +785,8 @@ MODE is the default mode to use when not specified in ARG."
    ((stringp arg)
     (list (cons arg mode)))
    ((and (consp arg) (symbolp (cdr arg)))
-    ;; Handle ((regexp1 regexp2 ...) . mode) format
     (if (listp (car arg))
         (mapcar (lambda (pat) (cons pat (cdr arg))) (car arg))
-      ;; Handle (regexp . mode) format
       (list arg)))
    ((listp arg)
     (mapcar (lambda (pat) (cons pat mode)) arg))
@@ -849,10 +814,8 @@ MODE is the default mode to use when not specified in ARG."
    ((stringp arg)
     (list (cons arg mode)))
    ((and (consp arg) (symbolp (cdr arg)))
-    ;; Handle ((int1 int2 ...) . mode) format
     (if (listp (car arg))
         (mapcar (lambda (pat) (cons pat (cdr arg))) (car arg))
-      ;; Handle (interpreter . mode) format
       (list arg)))
    ((listp arg)
     (mapcar (lambda (pat) (cons pat mode)) arg))
@@ -923,7 +886,7 @@ feature context."
   (lambda (symbol where function)
     `(advice-add ',symbol ,where ,function))
   :documentation "Add a piece of advice on a function.
- See `advice-add' for more details."
+  See `advice-add' for more details."
   :after-loaded t
   :debug '(sexp sexp function-form)
   :ensure '(nil nil func)
@@ -942,7 +905,6 @@ feature context."
   :indent 1
   :documentation "Delay loading BODY until a certain amount of idle time has passed.")
 
-
 ;;; Elpaca
 
 ;; -setup - aka elpaca-setup
@@ -951,7 +913,7 @@ feature context."
   "Execute BODY in `setup' declaration after ORDER is finished.
 If the :disabled keyword is present in body, the package is completely ignored.
 This happens regardless of the value associated with :disabled.
-The expansion is a string indicating the package has been disabled."
+This expansion is a string indicating the package has been disabled."
   (declare (indent 1))
   (if (memq :disabled body)
       (format "%S :disabled by elpaca-setup" order)
@@ -963,9 +925,9 @@ The expansion is a string indicating the package has been disabled."
       `(elpaca ,o (setup
                       ,(if-let* (((memq (car-safe order) '(quote \`)))
                                  (feature (flatten-tree order)))
-                           (cadr feature)
-                         (elpaca--first order))
-                    ,@body)))))
+                            (cadr feature)
+                          (elpaca--first order))
+                     ,@body)))))
 
 (defun setup-wrap-to-install-package (body _name)
   "Wrap BODY in an `elpaca' block if necessary.
@@ -974,7 +936,7 @@ contains an alist with the key `elpaca'."
   (if (assq 'elpaca setup-attributes)
       `(elpaca ,(cdr (assq 'elpaca setup-attributes)) ,@(macroexp-unprogn body))
     body))
-;; Add the wrapper function
+
 (add-to-list 'setup-modifier-list #'setup-wrap-to-install-package)
 
 (setup-define :elpaca
@@ -984,14 +946,47 @@ contains an alist with the key `elpaca'."
            ((eq order nil) '(elpaca . nil))
            (`(elpaca . (,order ,@recipe))))
           setup-attributes)
-    ;; If the macro wouldn't return nil, it would try to insert the result of
-    ;; `push' which is the new value of the modified list. As this value usually
-    ;; cannot be evaluated, it is better to return nil which the byte compiler
-    ;; would optimize away anyway.
     nil)
   :documentation "Install ORDER with `elpaca'.
 The ORDER can be used to deduce the feature context."
   :shorthand #'cadr)
+
+;; ---------------------------------------------------------------------
+;; Setup DSL integration.
+;; ---------------------------------------------------------------------
+
+(require 'setup-dsl-backend)
+
+(defmacro setup-dsl (name &rest body)
+  "A small DSL facade built on top of the host `setup' macro.
+It rewrites surface DSL forms into the host `setup' vocabulary before
+expanding the block."
+  (declare (indent 1))
+  `(setup ,name
+     ,@(apply #'append
+              (mapcar (lambda (form)
+                        (let ((out (setup-dsl-compile form :setup)))
+                          (if (and (listp out)
+                                   (eq (car out) :seq))
+                              (cdr out)
+                            (list out))))
+                      body))))
+
+(setup-define :dsl
+  (lambda (&rest body)
+    (require 'setup-dsl-backend)
+    (let ((forms (mapcar (lambda (form)
+                           (let ((out (setup-dsl-compile form :setup)))
+                             (if (and (listp out)
+                                      (eq (car out) :seq))
+                                 (cdr out)
+                               (list out))))
+                         body)))
+      `(progn ,@(apply #'append forms))))
+  :documentation "Evaluate the setup DSL within a `setup' body.
+This is the wraparound point for the term-rewrite layer."
+  :indent 1
+  :repeatable t)
 
 (provide 'setup)
 
